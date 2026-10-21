@@ -1,4 +1,4 @@
-import type { AnalysisReport, CodeGraph, Finding, NodeDetail, Project } from "../types";
+import type { AnalysisReport, CodeGraph, Finding, NodeDetail, Project, RepoListing } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -21,6 +21,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  listRepos: (path = "") => request<RepoListing>(`/repos?path=${encodeURIComponent(path)}`),
   listProjects: () => request<Project[]>("/projects"),
   createProject: (body: { name: string; path: string }) =>
     request<Project>("/projects", { method: "POST", body: JSON.stringify(body) }),

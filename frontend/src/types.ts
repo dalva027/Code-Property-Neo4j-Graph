@@ -36,6 +36,22 @@ export interface Project {
   created_at: string;
 }
 
+/** A folder under REPOS_ROOT offered by the picker. */
+export interface RepoDir {
+  name: string;
+  path: string;              // relative to REPOS_ROOT, posix separators
+  source_files: number;      // files a registered parser can read, recursively
+  has_subdirs: boolean;
+  is_git: boolean;
+  project_id: string | null; // set when a project already points at this folder
+  project_name: string | null;
+}
+
+export interface RepoListing {
+  path: string;              // the folder that was listed; "" for REPOS_ROOT itself
+  dirs: RepoDir[];
+}
+
 export interface Finding {
   id: string;
   project_id: string;

@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
-import { useCreateProject, useDeleteProject, useProjects, useReingestProject } from "../hooks/useApi";
+import { useState } from "react";
+import { useDeleteProject, useProjects, useReingestProject } from "../hooks/useApi";
+import { RepoPicker } from "./RepoPicker";
 
 interface Props {
   selected: string | null;
@@ -8,45 +9,37 @@ interface Props {
 
 export function ProjectSidebar({ selected, onSelect }: Props) {
   const { data: projects = [], isLoading, error } = useProjects();
-  const create = useCreateProject();
   const reingest = useReingestProject();
   const remove = useDeleteProject();
-  const [name, setName] = useState("");
-  const [path, setPath] = useState("");
+  // null = user hasn't said: show the picker automatically while there is nothing else to pick.
+  const [adding, setAdding] = useState<boolean | null>(null);
+  const pickerOpen = adding ?? (!isLoading && !error && projects.length === 0);
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !path.trim()) return;
-    create.mutate(
-      { name: name.trim(), path: path.trim() },
-      {
-        onSuccess: (project) => {
-          onSelect(project.id);
-          setName("");
-          setPath("");
-        },
-      },
-    );
+  const openProject = (id: string) => {
+    onSelect(id);
+    setAdding(false);
   };
 
   return (
     <div className="sidebar">
       <div className="brand">codegraph</div>
 
-      <form className="scan-form" onSubmit={submit}>
-        <label>
-          Project name
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="sample" />
-        </label>
-        <label>
-          Folder under repos/
-          <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="sample" />
-        </label>
-        <button type="submit" className="primary" disabled={create.isPending}>
-          {create.isPending ? "Scanning…" : "Scan repository"}
-        </button>
-        {create.isError && <p className="error">{create.error.message}</p>}
-      </form>
+      {pickerOpen && (
+        <RepoPicker
+          onCreated={openProject}
+          onOpenExisting={openProject}
+          onClose={projects.length ? () => setAdding(false) : undefined}
+        />
+      )}
+
+      <div className="section-header">
+        <h3>Projects</h3>
+        {!pickerOpen && (
+          <button type="button" className="ghost" onClick={() => setAdding(true)}>
+            + Add repository
+          </button>
+        )}
+      </div>
 
       <ul className="project-list">
         {isLoading && <li className="muted">Loading projects…</li>}
@@ -82,7 +75,7 @@ export function ProjectSidebar({ selected, onSelect }: Props) {
           </li>
         ))}
         {!isLoading && !error && projects.length === 0 && (
-          <li className="muted">No projects yet. Scan one above.</li>
+          <li className="muted">No projects yet. Pick a folder above to scan it.</li>
         )}
       </ul>
     </div>

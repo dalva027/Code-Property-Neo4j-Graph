@@ -23,7 +23,7 @@ repos/<project>  ──►  GraphBuilder  ──►  Neo4j  ──►  Analyzers
 | Repository | `backend/app/graph/repository.py` | The only module that speaks Cypher. Upserts graphs, reads them back, stores findings. |
 | Analyzers | `backend/app/analyzers/` | `Analyzer` subclasses; each `run()` is a Cypher query that yields `Finding`s. Registered with `@register`. |
 | API | `backend/app/api/` | FastAPI routers. Docs at `/docs`. |
-| Web | `frontend/src/` | Project sidebar, force-directed graph canvas (`react-force-graph-2d`), findings panel, node inspector. Data via TanStack Query. |
+| Web | `frontend/src/` | Project sidebar with a folder picker for `repos/`, force-directed graph canvas (`react-force-graph-2d`), findings panel, node inspector. Data via TanStack Query. |
 
 ### Graph model
 
@@ -53,8 +53,8 @@ docker compose up --build
 - Neo4j Browser: http://localhost:7474 (neo4j / codegraph)
 
 Repositories to analyze go under `./repos/` (mounted read-only into the API container). A
-deliberately flawed `repos/sample` is included: in the UI enter name `sample`, folder `sample`,
-click **Scan repository**, then **Run analysis**. You should see a circular import, an
+deliberately flawed `repos/sample` is included: in the UI the **Add repository** panel lists the
+folders found under `repos/`; pick `sample`, click **Scan sample**, then **Run analysis**. You should see a circular import, an
 over-complex function, and a few unused functions.
 
 Same thing over HTTP:
@@ -91,6 +91,7 @@ npm run dev
 
 | Method | Path | Purpose |
 |---|---|---|
+| `GET` | `/api/repos?path=` | Browse folders under `REPOS_ROOT` with source-file counts; flags ones already scanned |
 | `GET` | `/api/projects` | List projects |
 | `POST` | `/api/projects` | `{name, path}` — scan a folder under `REPOS_ROOT`, build its graph |
 | `GET` | `/api/projects/{id}` | Project summary |

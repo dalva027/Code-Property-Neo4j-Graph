@@ -43,6 +43,23 @@ class ProjectCreate(BaseModel):
     path: str = Field(description="Directory path relative to REPOS_ROOT")
 
 
+class RepoDir(BaseModel):
+    """A directory under REPOS_ROOT that the UI can offer as a scan target."""
+
+    name: str
+    path: str = Field(description="Directory path relative to REPOS_ROOT, posix separators")
+    source_files: int = Field(0, description="Files a registered parser can read, recursively")
+    has_subdirs: bool = False
+    is_git: bool = False
+    project_id: str | None = Field(None, description="Set when a project already points here")
+    project_name: str | None = None
+
+
+class RepoListing(BaseModel):
+    path: str = Field(description="The directory that was listed; empty string for REPOS_ROOT")
+    dirs: list[RepoDir]
+
+
 class AnalysisReport(BaseModel):
     project_id: str
     total: int
