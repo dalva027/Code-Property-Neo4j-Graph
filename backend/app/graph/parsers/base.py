@@ -13,6 +13,7 @@ class ParsedSymbol:
     line_end: int
     parent: str | None              # qualified name of the enclosing symbol; None = top level
     metrics: dict[str, int] = field(default_factory=dict)
+    subkind: str | None = None      # language-specific flavour, e.g. "struct", "trait", "method"
 
 
 @dataclass
@@ -25,6 +26,9 @@ class ParsedFile:
     imports: list[str] = field(default_factory=list)                # dotted module names
     calls: list[tuple[str, str]] = field(default_factory=list)      # (caller qualified name, callee as written)
     inherits: list[tuple[str, str]] = field(default_factory=list)   # (class qualified name, base as written)
+    # (resolution scope, type as written, trait as written); both sides are resolved by the builder
+    # because an impl may live in a different file from its type.
+    implements: list[tuple[str, str, str]] = field(default_factory=list)
 
 
 class LanguageParser(Protocol):

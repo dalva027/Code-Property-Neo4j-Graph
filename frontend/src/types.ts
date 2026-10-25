@@ -1,7 +1,7 @@
 // Mirrors backend/app/models. Keep the two in sync.
 
 export type NodeKind = "file" | "class" | "function";
-export type EdgeKind = "CONTAINS" | "IMPORTS" | "CALLS" | "INHERITS";
+export type EdgeKind = "CONTAINS" | "IMPORTS" | "CALLS" | "INHERITS" | "IMPLEMENTS";
 export type Severity = "info" | "warning" | "error";
 
 export interface GraphNode {
@@ -13,6 +13,7 @@ export interface GraphNode {
   line_start: number;
   line_end: number;
   language: string;
+  subkind?: string | null;   // language-specific flavour: "struct", "trait", "method", ...
   metrics: Record<string, number>;
 }
 

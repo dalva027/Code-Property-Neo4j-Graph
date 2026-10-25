@@ -9,7 +9,8 @@ class UnusedFunctions(Analyzer):
     severity = Severity.warning
     description = (
         "A function with no callers in the graph. Entry points, decorated functions "
-        "(routes, fixtures), tests and private/dunder names are skipped."
+        "(routes, fixtures), tests and private/dunder names are skipped, as are Rust trait methods, "
+        "which are reached through trait dispatch."
     )
 
     QUERY = """
@@ -19,6 +20,7 @@ class UnusedFunctions(Analyzer):
       AND NOT f.name STARTS WITH 'test'
       AND f.name <> 'main'
       AND coalesce(f.decorators, 0) = 0
+      AND NOT coalesce(f.subkind, '') IN ['trait fn', 'trait impl fn']
     RETURN f.id AS id, f.qualified_name AS qname, f.file AS file, f.line_start AS line
     ORDER BY f.file, f.line_start
     """

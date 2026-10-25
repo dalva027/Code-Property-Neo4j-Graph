@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 IGNORED_DIRS = {
     ".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv", "env",
-    "dist", "build", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox",
+    "dist", "build", "target", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox",
 }
 
 
@@ -63,11 +63,14 @@ class GraphBuilder:
             module_to_file[pf.module] = file_node.id
 
             for sym in pf.symbols:
+                if sym.qualified_name in by_qname:
+                    log.warning("duplicate symbol %s in %s; keeping the first", sym.qualified_name, pf.path)
+                    continue
                 node = GraphNode(
                     id=nid(sym.qualified_name), kind=NodeKind(sym.kind), name=sym.name,
                     qualified_name=sym.qualified_name, file=pf.path,
                     line_start=sym.line_start, line_end=sym.line_end,
-                    language=pf.language, metrics=dict(sym.metrics),
+                    language=pf.language, subkind=sym.subkind, metrics=dict(sym.metrics),
                 )
                 graph.nodes.append(node)
                 by_qname[sym.qualified_name] = node
@@ -95,6 +98,11 @@ class GraphBuilder:
             for cls, base in pf.inherits:
                 if target := self._resolve(base, cls, by_qname, by_name):
                     add(nid(cls), nid(target), EdgeKind.inherits)
+            for scope, typ, trait in pf.implements:
+                source = self._resolve(typ, scope, by_qname, by_name)
+                target = self._resolve(trait, scope, by_qname, by_name)
+                if source and target:
+                    add(nid(source), nid(target), EdgeKind.implements)
         return graph
 
     @staticmethod

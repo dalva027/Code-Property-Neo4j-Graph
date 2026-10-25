@@ -14,6 +14,7 @@ class EdgeKind(str, Enum):
     imports = "IMPORTS"
     calls = "CALLS"
     inherits = "INHERITS"
+    implements = "IMPLEMENTS"
 
 
 class GraphNode(BaseModel):
@@ -25,6 +26,7 @@ class GraphNode(BaseModel):
     line_start: int = 0
     line_end: int = 0
     language: str = "python"
+    subkind: str | None = None    # e.g. "struct", "trait", "method"; None when kind says it all
     metrics: dict[str, float] = Field(default_factory=dict)  # loc, complexity, methods, ...
 
 

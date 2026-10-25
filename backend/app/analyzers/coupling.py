@@ -9,10 +9,13 @@ from app.models.analysis import Finding, Severity
 class CircularImports(Analyzer):
     rule = "circular-import"
     severity = Severity.error
-    description = "Two files import each other, directly or through intermediaries."
+    description = (
+        "Two Python files import each other, directly or through intermediaries. Rust is exempt: "
+        "modules in a crate may `use` each other cyclically."
+    )
 
     QUERY = """
-    MATCH (a:File {project_id: $pid})-[:IMPORTS]->(b:File)
+    MATCH (a:File {project_id: $pid, language: 'python'})-[:IMPORTS]->(b:File)
     WHERE a.id < b.id AND EXISTS { (b)-[:IMPORTS*1..8]->(a) }
     RETURN a.id AS id, a.file AS file, b.file AS other
     """

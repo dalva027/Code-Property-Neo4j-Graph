@@ -83,7 +83,7 @@ export function GraphCanvas({ projectId, selectedNodeId, onSelectNode }: Props) 
           height={size.height}
           backgroundColor="#1c2230"
           nodeId="id"
-          nodeLabel={(n) => `${(n as FGNode).kind}: ${(n as FGNode).qualified_name}`}
+          nodeLabel={(n) => `${(n as FGNode).subkind ?? (n as FGNode).kind}: ${(n as FGNode).qualified_name}`}
           nodeCanvasObject={(node, ctx, scale) =>
             paintNode(node as FGNode, ctx, scale, (node as FGNode).id === selectedNodeId)
           }
@@ -95,7 +95,7 @@ export function GraphCanvas({ projectId, selectedNodeId, onSelectNode }: Props) 
             ctx.fill();
           }}
           linkColor={(l) => EDGE_COLOR[(l as FGLink).kind]}
-          linkWidth={(l) => ((l as FGLink).kind === "INHERITS" ? 1.5 : 1)}
+          linkWidth={(l) => (["INHERITS", "IMPLEMENTS"].includes((l as FGLink).kind) ? 1.5 : 1)}
           linkDirectionalArrowLength={(l) => ((l as FGLink).kind === "CONTAINS" ? 0 : 4)}
           linkDirectionalArrowRelPos={1}
           onNodeClick={(node) => onSelectNode((node as FGNode).id)}

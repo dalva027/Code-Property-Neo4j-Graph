@@ -18,7 +18,7 @@ repos/<project>  ──►  GraphBuilder  ──►  Neo4j  ──►  Analyzers
 
 | Layer | Where | What it does |
 |---|---|---|
-| Parsers | `backend/app/graph/parsers/` | One `LanguageParser` per language. Python ships (stdlib `ast`); each returns a `ParsedFile` of symbols, imports, calls, inheritance and metrics. |
+| Parsers | `backend/app/graph/parsers/` | One `LanguageParser` per language: Python (stdlib `ast`) and Rust (tree-sitter). Each returns a `ParsedFile` of symbols, imports, calls, inheritance/impls and metrics. |
 | Builder | `backend/app/graph/builder.py` | Walks the tree, runs parsers, resolves references lexically, emits an in-memory `CodeGraph`. Pure Python, unit-tested. |
 | Repository | `backend/app/graph/repository.py` | The only module that speaks Cypher. Upserts graphs, reads them back, stores findings. |
 | Analyzers | `backend/app/analyzers/` | `Analyzer` subclasses; each `run()` is a Cypher query that yields `Finding`s. Registered with `@register`. |
@@ -33,13 +33,15 @@ repos/<project>  ──►  GraphBuilder  ──►  Neo4j  ──►  Analyzers
 (Class)-[:CONTAINS]->(Function)            methods
 (File)-[:IMPORTS]->(File)
 (Function)-[:CALLS]->(Function)
-(Class)-[:INHERITS]->(Class)
+(Class)-[:INHERITS]->(Class)              Python base classes, Rust supertraits
+(Class)-[:IMPLEMENTS]->(Class)            Rust `impl Trait for Type`
 (File|Symbol)-[:HAS_FINDING]->(Finding)
 ```
 
 Every node carries `project_id`, `id` (`<project_id>:<qualified_name>`), `kind`, `name`,
-`qualified_name`, `file`, `line_start`/`line_end`, and numeric metrics as flat properties
-(`loc`, `complexity`, `parameters`, `decorators`, `methods`). Constraints and indexes live in
+`qualified_name`, `file`, `line_start`/`line_end`, `language`, an optional `subkind`, and numeric
+metrics as flat properties (`loc`, `complexity`, `parameters`, `decorators`, `methods`, and for Rust
+`fields`/`variants`). Constraints and indexes live in
 `backend/app/db/schema.cypher` and are applied at startup.
 
 ## Quick start
@@ -55,7 +57,8 @@ docker compose up --build
 Repositories to analyze go under `./repos/` (mounted read-only into the API container). A
 deliberately flawed `repos/sample` is included: in the UI the **Add repository** panel lists the
 folders found under `repos/`; pick `sample`, click **Scan sample**, then **Run analysis**. You should see a circular import, an
-over-complex function, and a few unused functions.
+over-complex function, and a few unused functions. `repos/sample-rust` does the same for Rust
+(see its README).
 
 Same thing over HTTP:
 
@@ -108,8 +111,8 @@ npm run dev
 
 | Rule | Severity | Signal |
 |---|---|---|
-| `circular-import` | error | `(a)-[:IMPORTS]->(b)` and a path `(b)-[:IMPORTS*]->(a)` |
-| `unused-function` | warning | Function with no incoming `CALLS`; skips tests, entry points, decorated and `_private` names |
+| `circular-import` | error | `(a)-[:IMPORTS]->(b)` and a path `(b)-[:IMPORTS*]->(a)`; Python only, since Rust modules may `use` each other cyclically |
+| `unused-function` | warning | Function with no incoming `CALLS`; skips tests, entry points, decorated (attributed, in Rust) and `_private` names, and Rust trait methods |
 | `high-complexity` | warning | `complexity > MAX_COMPLEXITY` (10) |
 | `god-class` | warning | `methods > MAX_CLASS_METHODS` (20) |
 | `long-function` | info | `loc > MAX_FUNCTION_LINES` (60) |
@@ -141,14 +144,40 @@ class DeepInheritance(Analyzer):
 ```
 
 **Add a language.** Implement `LanguageParser` (`graph/parsers/base.py`) and append it to
-`PARSERS`. The builder and everything downstream are language-agnostic. tree-sitter is the
-natural fit for TypeScript/Go/Java.
+`PARSERS`. The builder and everything downstream are language-agnostic. `parsers/rust.py` is a
+worked tree-sitter example; the same approach fits TypeScript/Go/Java.
+
+### How Rust maps onto the graph
+
+| Rust | Node / edge | `subkind` |
+|---|---|---|
+| `struct` / `enum` / `union` / `trait` | `Class` | `struct` / `enum` / `union` / `trait` |
+| free `fn` | `Function` | `fn` |
+| fn in `impl Type` | `Function`, contained by the type | `method` |
+| fn in `impl Trait for Type` | `Function` named `Type.<Trait>.fn` | `trait impl fn` |
+| fn declared in a `trait` | `Function`, contained by the trait | `trait fn` |
+| `impl Trait for Type` | `IMPLEMENTS` edge | |
+| `trait A: B` | `INHERITS` edge | |
+| `use` | `IMPORTS` edge to the file of the named module | |
+
+Modules come from paths: `<crate>/src/lib.rs` is `<crate>`, `src/main.rs` is `<crate>.main`,
+`src/a.rs` and `src/a/mod.rs` are `<crate>.a`. The crate is named after its directory (dashes become
+underscores), or `crate` when the package is the scanned folder itself. `crate::`, `self::`,
+`super::`, `Self::` and `use` aliases are rewritten to these names before resolution. Cargo's
+`target/` is skipped.
 
 ## Known limits and next steps
 
 - Ingestion runs inside the request. Fine for small and mid-size repos; large ones want a
   background task (e.g. `BackgroundTasks` or a queue) plus a status endpoint.
 - Reference resolution is lexical (no type inference); dynamic dispatch and re-exports are missed.
+  `self.method()` only resolves against the enclosing class/impl/trait, not base classes or
+  supertraits.
+- Rust specifics: macro bodies (`println!`, `vec!`, `write!`) are opaque, so calls inside them are
+  missed; method calls on non-`self` receivers resolve only when the method name is unique; the
+  crate's own name (`use my_crate::...` from `main.rs` or `tests/`) isn't known unless the crate
+  sits in a folder of that name; `methods` on a type counts impls in its own file only; `pub` API
+  functions of a library crate are still reported as unused.
 - The graph endpoint returns everything up to `limit`. For big projects, add neighborhood
   queries (`node?id=&depth=`) and let the UI expand on click.
 - Obvious additions: diff-scoped analysis for PRs (only nodes touched by a commit), a

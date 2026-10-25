@@ -2,9 +2,10 @@ from pathlib import Path
 
 from app.graph.parsers.base import LanguageParser, ParsedFile, ParsedSymbol
 from app.graph.parsers.python import PythonParser
+from app.graph.parsers.rust import RustParser
 
-# Register additional languages here (e.g. a tree-sitter based TypeScript parser).
-PARSERS: list[LanguageParser] = [PythonParser()]
+# Register additional languages here.
+PARSERS: list[LanguageParser] = [PythonParser(), RustParser()]
 
 _BY_EXTENSION: dict[str, LanguageParser] = {ext: p for p in PARSERS for ext in p.extensions}
 

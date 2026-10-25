@@ -28,7 +28,7 @@ export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Prop
     <div className="panel">
       <header className="panel-header">
         <span className="kind-badge" style={{ "--chip": KIND_COLOR[node.kind] } as CSSProperties}>
-          {node.kind}
+          {node.subkind ?? node.kind}
         </span>
         <button className="ghost" onClick={onClose}>Back to findings</button>
       </header>
@@ -36,7 +36,7 @@ export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Prop
       <h2 className="mono">{node.name}</h2>
       <p className="muted mono small">{node.qualified_name}</p>
       <p className="muted small">
-        {node.file}, lines {node.line_start}–{node.line_end}
+        {node.file}, lines {node.line_start}–{node.line_end} · {node.language}
       </p>
 
       {Object.keys(node.metrics).length > 0 && (

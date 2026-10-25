@@ -7,21 +7,23 @@ from app.db import neo4j
 from app.models.analysis import Finding, NodeDetail, Project, Severity
 from app.models.graph import CodeGraph, EdgeKind, GraphEdge, GraphNode, NodeKind
 
-CORE_PROPS = {"id", "project_id", "kind", "name", "qualified_name", "file", "line_start", "line_end", "language"}
+CORE_PROPS = {"id", "project_id", "kind", "name", "qualified_name", "file", "line_start", "line_end", "language",
+              "subkind"}
+REL_TYPES = "|".join(k.value for k in EdgeKind)
 LABELS = {NodeKind.file: "File", NodeKind.class_: "Symbol:Class", NodeKind.function: "Symbol:Function"}
 SEVERITY_RANK = {Severity.error: 0, Severity.warning: 1, Severity.info: 2}
 
-NODE_DETAIL = """
-MATCH (n:File|Symbol {id: $id, project_id: $pid})
-CALL { WITH n
-  MATCH (n)-[r:CONTAINS|IMPORTS|CALLS|INHERITS]->(t)
-  RETURN collect({source: n.id, target: t.id, kind: type(r)}) AS outgoing }
-CALL { WITH n
-  MATCH (s)-[r:CONTAINS|IMPORTS|CALLS|INHERITS]->(n)
-  RETURN collect({source: s.id, target: n.id, kind: type(r)}) AS incoming }
-CALL { WITH n
+NODE_DETAIL = f"""
+MATCH (n:File|Symbol {{id: $id, project_id: $pid}})
+CALL {{ WITH n
+  MATCH (n)-[r:{REL_TYPES}]->(t)
+  RETURN collect({{source: n.id, target: t.id, kind: type(r)}}) AS outgoing }}
+CALL {{ WITH n
+  MATCH (s)-[r:{REL_TYPES}]->(n)
+  RETURN collect({{source: s.id, target: n.id, kind: type(r)}}) AS incoming }}
+CALL {{ WITH n
   OPTIONAL MATCH (n)-[:HAS_FINDING]->(f:Finding)
-  RETURN collect(f) AS findings }
+  RETURN collect(f) AS findings }}
 RETURN n, outgoing, incoming, findings
 """
 
@@ -31,7 +33,7 @@ def _node_props(node: GraphNode, project_id: str) -> dict[str, Any]:
     return {
         "id": node.id, "project_id": project_id, "kind": node.kind.value, "name": node.name,
         "qualified_name": node.qualified_name, "file": node.file, "line_start": node.line_start,
-        "line_end": node.line_end, "language": node.language, **node.metrics,
+        "line_end": node.line_end, "language": node.language, "subkind": node.subkind, **node.metrics,
     }
 
 
@@ -40,7 +42,7 @@ def _node_from_props(props: dict[str, Any]) -> GraphNode:
     return GraphNode(
         id=props["id"], kind=props["kind"], name=props["name"], qualified_name=props["qualified_name"],
         file=props["file"], line_start=props.get("line_start", 0), line_end=props.get("line_end", 0),
-        language=props.get("language", "python"), metrics=metrics,
+        language=props.get("language", "python"), subkind=props.get("subkind"), metrics=metrics,
     )
 
 
@@ -103,7 +105,7 @@ class GraphRepository:
             "MATCH (n:File|Symbol {project_id: $pid}) RETURN n LIMIT $limit", pid=project_id, limit=limit
         )
         edges = await neo4j.run(
-            "MATCH (a:File|Symbol {project_id: $pid})-[r:CONTAINS|IMPORTS|CALLS|INHERITS]->(b) "
+            f"MATCH (a:File|Symbol {{project_id: $pid}})-[r:{REL_TYPES}]->(b) "
             "RETURN a.id AS source, b.id AS target, type(r) AS kind",
             pid=project_id,
         )
