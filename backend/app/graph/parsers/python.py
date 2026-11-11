@@ -1,7 +1,7 @@
 """Python parser built on the standard-library `ast` module."""
 import ast
 
-from app.graph.parsers.base import ParsedFile, ParsedSymbol
+from app.graph.parsers.base import ParsedCall, ParsedFile, ParsedSymbol
 
 _BRANCHES = (ast.If, ast.For, ast.AsyncFor, ast.While, ast.ExceptHandler, ast.IfExp)
 _SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
@@ -134,7 +134,7 @@ class _Visitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         # Module-level calls (scope depth 1) are not attributed to a symbol.
         if len(self.scope) > 1 and (callee := _dotted(node.func)):
-            self.parsed.calls.append((self.current, callee))
+            self.parsed.calls.append(ParsedCall(self.current, callee, node.lineno))
         self.generic_visit(node)
 
 

@@ -1,0 +1,35 @@
+# Cryptography misuse patterns for rules C1, C3, C5, C6.
+weak_crypto:
+  weak_hash:            # C1, CWE-327/328
+    - {path: "md5", kind: crate}
+    - {path: "sha1", kind: crate}
+    - {path: "sha1_smol", kind: crate}
+    - {path: "openssl::hash::MessageDigest::{md5,sha1}"}
+    - {path: "ring::digest::SHA1_FOR_LEGACY_USE_ONLY", kind: type}
+  insecure_rng:         # C3, CWE-338; thread_rng, OsRng and getrandom are fine
+    - {path: "rand::rngs::{SmallRng,mock::StepRng}", kind: type}
+    - {path: "rand::rngs::{SmallRng,mock::StepRng}::*", note: "any constructor of a non-cryptographic RNG"}
+    - {path: "rand::rngs::StdRng::{seed_from_u64,from_seed}", args: [0], note: "with a constant seed"}
+    - {path: "?::{seed_from_u64,from_seed}", args: [0], note: "with a constant seed"}
+    - {path: "fastrand", kind: crate}
+    - {path: "oorandom", kind: crate}
+  tls_disabled:         # C5, CWE-295
+    - {path: "?::{danger_accept_invalid_certs,danger_accept_invalid_hostnames}", args: [0], note: "with argument true"}
+    - {path: "openssl::ssl::SslVerifyMode::NONE", kind: type}
+    - {path: "?::dangerous", note: "rustls ClientConfig::dangerous()"}
+    - {path: "rustls::client::danger::ServerCertVerifier", kind: type, note: "a custom verifier; check it verifies"}
+    - {path: "rustls::client::ServerCertVerifier", kind: type}
+  insecure_cipher:      # C6, CWE-327
+    - {path: "des", kind: crate}
+    - {path: "rc2", kind: crate}
+    - {path: "rc4", kind: crate}
+    - {path: "blowfish", kind: crate}
+    - {path: "ecb", kind: crate}
+    - {path: "openssl::symm::Cipher::{des_cbc,des_ecb,des_ede3,des_ede3_cbc,rc4,aes_128_ecb,aes_192_ecb,aes_256_ecb,bf_cbc,bf_ecb}"}
+  weak_kdf:             # C7, CWE-916; `min` gives the smallest acceptable literal per argument (OWASP 2023)
+    - {path: "pbkdf2::{pbkdf2,pbkdf2_hmac,pbkdf2_hmac_array}", args: [2], min: {2: 100000}, note: "rounds"}
+    - {path: "openssl::pkcs5::pbkdf2_hmac", args: [2], min: {2: 100000}}
+    - {path: "ring::pbkdf2::derive", args: [1], min: {1: 100000}}
+    - {path: "argon2::Params::new", args: [0, 1], min: {0: 19456, 1: 2}, note: "m_cost KiB, t_cost"}
+    - {path: "scrypt::Params::new", args: [0], min: {0: 15}, note: "log_n"}
+    - {path: "bcrypt::{hash,hash_with_salt}", args: [1], min: {1: 10}, note: "cost"}

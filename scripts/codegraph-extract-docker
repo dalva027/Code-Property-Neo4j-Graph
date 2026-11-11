@@ -1,0 +1,11 @@
+#!/bin/sh
+# Run codegraph-extract through Docker, for machines without a Rust toolchain.
+#
+#   docker build -t codegraph-extract extractor
+#   CODEGRAPH_EXTRACTOR=$PWD/scripts/codegraph-extract-docker uvicorn app.main:app
+#
+# The repository root is mounted at its own absolute path, so lockfile and advisory-db paths that
+# point inside the repository mean the same thing in the container.
+set -eu
+ROOT=${CODEGRAPH_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
+exec docker run --rm -i -v "$ROOT:$ROOT" -w "$PWD" "${CODEGRAPH_EXTRACT_IMAGE:-codegraph-extract}" "$@"

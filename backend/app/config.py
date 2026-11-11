@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     repos_root: str = "./repos"
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # Dependency analysis (extractor/, `codegraph-extract deps`). Without the binary, crates and
+    # dependency edges still come from parsing Cargo.lock, but there are no advisories.
+    codegraph_extractor: str = "codegraph-extract"
+    advisory_db_path: str = "./.advisory-db"
+    advisory_db_max_age_hours: int = 24      # refresh the database when older; 0 = never refresh
+    advisory_db_offline: bool = False        # never fetch; use what is on disk
+    extractor_timeout_seconds: int = 300
+
     # Analyzer thresholds
     max_complexity: int = 10
     max_function_lines: int = 60

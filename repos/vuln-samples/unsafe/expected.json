@@ -1,0 +1,23 @@
+{
+  "description": "Class U ground truth: unsafe reachable from main and from a C export, SAFETY-comment coverage, dangerous operations, unsafe impl Send, and the FFI surface. Scope is the unsafe category only; the sample also has quality findings.",
+  "scope": {"categories": ["unsafe"]},
+  "findings": [
+    {"rule": "unsafe-reachable-from-entry", "file": "src/buffer.rs", "line": 21, "note": "fill, 1 call from main"},
+    {"rule": "unsafe-reachable-from-entry", "file": "src/buffer.rs", "line": 29, "note": "as_slice, via sum"},
+    {"rule": "unsafe-reachable-from-entry", "file": "src/buffer.rs", "line": 34, "note": "head_u32 is an unsafe fn"},
+    {"rule": "unsafe-reachable-from-entry", "file": "src/buffer.rs", "line": 40, "note": "sum"},
+    {"rule": "unsafe-reachable-from-entry", "file": "src/ffi.rs", "line": 10, "note": "strlen_of"},
+    {"rule": "unsafe-reachable-from-entry", "file": "src/ffi.rs", "line": 17, "note": "sample_checksum is itself an ffi entry point"},
+    {"rule": "undocumented-unsafe", "file": "src/buffer.rs", "line": 10, "note": "unsafe impl Send"},
+    {"rule": "undocumented-unsafe", "file": "src/buffer.rs", "line": 30, "note": "block in as_slice"},
+    {"rule": "undocumented-unsafe", "file": "src/buffer.rs", "line": 34, "note": "unsafe fn head_u32 has a doc comment but no # Safety"},
+    {"rule": "dangerous-unsafe-op", "file": "src/buffer.rs", "line": 24, "note": "ptr::write_bytes"},
+    {"rule": "dangerous-unsafe-op", "file": "src/buffer.rs", "line": 30, "note": "slice::from_raw_parts"},
+    {"rule": "dangerous-unsafe-op", "file": "src/buffer.rs", "line": 35, "note": "ptr::read"},
+    {"rule": "dangerous-unsafe-op", "file": "src/buffer.rs", "line": 36, "note": "mem::transmute"},
+    {"rule": "dangerous-unsafe-op", "file": "src/ffi.rs", "line": 22, "note": "slice::from_raw_parts in the C export"},
+    {"rule": "unsafe-send-sync-impl", "file": "src/buffer.rs", "line": 10},
+    {"rule": "ffi-surface", "file": "src/ffi.rs", "line": 6, "note": "foreign fn strlen"},
+    {"rule": "ffi-surface", "file": "src/ffi.rs", "line": 17, "note": "#[no_mangle] extern C export with raw pointer params"}
+  ]
+}

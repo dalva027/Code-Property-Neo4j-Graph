@@ -1,0 +1,22 @@
+# Operations that are dangerous inside `unsafe` (rule U3) and markers for the FFI surface (U5).
+dangerous_ops:
+  memory:
+    - {path: "std::mem::{transmute,transmute_copy,zeroed,uninitialized}"}
+    - {path: "std::mem::MaybeUninit::{assume_init,assume_init_read,assume_init_mut}"}
+    - {path: "std::slice::{from_raw_parts,from_raw_parts_mut}"}
+    - {path: "std::vec::Vec::{set_len,from_raw_parts}"}
+    - {path: "std::string::String::{from_utf8_unchecked,from_raw_parts}"}
+    - {path: "std::str::from_utf8_unchecked"}
+    - {path: "std::boxed::Box::from_raw"}
+    - {path: "std::ptr::{read,read_unaligned,write,write_unaligned,copy,copy_nonoverlapping,write_bytes}"}
+    - {path: "?::{get_unchecked,get_unchecked_mut,unwrap_unchecked}"}
+    - {path: "?::{offset,add,sub}", note: "raw pointer arithmetic; typed in phase 3"}
+  ffi:
+    - {path: "std::ffi::CStr::from_ptr"}
+    - {path: "std::ffi::CString::from_raw"}
+  # Calls and macros that abort the program on bad input (rule P1, CWE-248).
+  panic:
+    - {path: "?::{unwrap,expect,unwrap_unchecked,unwrap_err,expect_err}"}
+    - {path: "std::option::Option::{unwrap,expect,unwrap_unchecked}"}
+    - {path: "std::result::Result::{unwrap,expect,unwrap_unchecked,unwrap_err,expect_err}"}
+    - {path: "std::{panic,unreachable,todo,unimplemented}!"}

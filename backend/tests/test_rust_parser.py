@@ -79,7 +79,7 @@ def test_items_subkinds_and_parents():
     assert syms["crate.shapes.Circle.grow"].metrics["parameters"] == 2
 
     assert ("crate.shapes.Area", "Clone") in parsed.inherits
-    assert ("crate.shapes.Circle", "Circle", "Area") in parsed.implements
+    assert ("crate.shapes.Circle", "Circle", "Area") in {(i.scope, i.type, i.trait) for i in parsed.implements}
 
 
 def test_path_rewriting_in_calls():
@@ -103,7 +103,7 @@ def test_path_rewriting_in_calls():
         }
         fn local() {}
     """)
-    callees = [callee for caller, callee in parsed.calls if caller == "crate.a.b.T.run"]
+    callees = [c.callee for c in parsed.calls if c.caller == "crate.a.b.T.run"]
     assert callees == [
         "crate.db.connect", "crate.db.pool.Pool.get", "crate.a.sibling.go", "crate.a.b.local",
         "crate.x.y", "crate.a.b.T.new", "self.step", "_.step", "_.thing",

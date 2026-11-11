@@ -1,4 +1,12 @@
-from app.models.analysis import AnalysisReport, Finding, NodeDetail, Project, ProjectCreate, RuleInfo, Severity
+from app.models.analysis import (
+    AnalysisReport,
+    Finding,
+    NodeDetail,
+    Project,
+    ProjectCreate,
+    RuleInfo,
+    Severity,
+)
 from app.models.graph import CodeGraph, EdgeKind, GraphEdge, GraphNode, NodeKind
 
 __all__ = [

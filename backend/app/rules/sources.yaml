@@ -1,0 +1,37 @@
+# Where untrusted data enters (class T and the tainted forms of U3, P3, P4).
+# kind: call (the return value is tainted), type (a parameter of this type is tainted, used for
+# web-framework extractors), derive (every field of a struct with this derive is tainted).
+# Library mode: for library crates the analyzers also treat every parameter of a `pub` fn as a
+# source; that is behaviour, not data, so it is not listed here.
+sources:
+  env:
+    - {path: "std::env::{args,args_os,var,var_os,vars,vars_os}"}
+  stdin:
+    - {path: "std::io::stdin"}
+    - {path: "std::io::Stdin::{read_line,lines,lock}", receiver: true}
+  network:
+    - {path: "std::net::TcpStream::{read,read_to_end,read_to_string,read_exact}"}
+    - {path: "std::net::UdpSocket::{recv,recv_from}"}
+    - {path: "tokio::io::AsyncReadExt::{read,read_to_end,read_to_string,read_exact}"}
+  files:
+    - {path: "std::fs::{read,read_to_string}", note: "trusted unless the project configures otherwise"}
+  axum:
+    - {path: "axum::extract::{Path,Query,Json,Form,RawQuery,Multipart,Request}", kind: type}
+    - {path: "axum::http::HeaderMap", kind: type}
+    - {path: "axum::body::Bytes", kind: type}
+  actix_web:
+    - {path: "actix_web::web::{Path,Query,Json,Form,Bytes,Payload}", kind: type}
+    - {path: "actix_web::HttpRequest::{match_info,query_string,headers,uri}", receiver: true}
+  rocket:
+    - {path: "rocket::form::Form", kind: type}
+    - {path: "rocket::serde::json::Json", kind: type}
+  warp:
+    - {path: "warp::path::param"}
+    - {path: "warp::query"}
+    - {path: "warp::body::{json,form,bytes}"}
+  hyper:
+    - {path: "hyper::Request", kind: type}
+  tonic:
+    - {path: "tonic::Request::into_inner", receiver: true}
+  clap:
+    - {path: "clap::Parser", kind: derive}

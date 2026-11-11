@@ -57,7 +57,7 @@ export function RepoPicker({ onCreated, onOpenExisting, onClose }: Props) {
 
   const canSubmit = picked !== null && !create.isPending && (picked.project_id !== null || name.trim() !== "");
   const submitLabel = create.isPending
-    ? "Scanning…"
+    ? "Starting scan…"
     : !picked
       ? "Pick a folder"
       : picked.project_id

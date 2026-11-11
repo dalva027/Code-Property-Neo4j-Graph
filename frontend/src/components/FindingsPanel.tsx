@@ -5,10 +5,12 @@ import type { Severity } from "../types";
 
 interface Props {
   projectId: string;
+  ready: boolean;             // false while the project is scanning or its scan failed
+  warnings?: string[];        // notes from the last scan, e.g. a crate without Cargo.lock
   onSelectNode: (id: string) => void;
 }
 
-export function FindingsPanel({ projectId, onSelectNode }: Props) {
+export function FindingsPanel({ projectId, ready, warnings = [], onSelectNode }: Props) {
   const { data: findings = [], isLoading } = useFindings(projectId);
   const analyze = useAnalyze(projectId);
   const [filter, setFilter] = useState<Severity | "all">("all");
@@ -21,7 +23,7 @@ export function FindingsPanel({ projectId, onSelectNode }: Props) {
     <div className="panel">
       <header className="panel-header">
         <h2>Findings</h2>
-        <button className="primary" onClick={() => analyze.mutate()} disabled={analyze.isPending}>
+        <button className="primary" onClick={() => analyze.mutate()} disabled={!ready || analyze.isPending}>
           {analyze.isPending ? "Analyzing…" : findings.length ? "Run again" : "Run analysis"}
         </button>
       </header>
@@ -49,6 +51,17 @@ export function FindingsPanel({ projectId, onSelectNode }: Props) {
 
       {analyze.isError && <p className="error">{analyze.error.message}</p>}
 
+      {warnings.length > 0 && (
+        <details className="scan-warnings">
+          <summary>{warnings.length} scan warning{warnings.length === 1 ? "" : "s"}</summary>
+          <ul className="plain small">
+            {warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       <ul className="finding-list">
         {isLoading && <li className="muted">Loading…</li>}
         {!isLoading && findings.length === 0 && (
@@ -63,7 +76,14 @@ export function FindingsPanel({ projectId, onSelectNode }: Props) {
             >
               <span className="severity-dot" style={{ background: SEVERITY_COLOR[f.severity] }} />
               <span className="finding-body">
-                <span className="finding-rule">{f.rule}</span>
+                <span className="finding-rule">
+                  {f.rule}
+                  {f.category !== "quality" && <span className="tag">{f.category}</span>}
+                  {f.cwe.map((c) => (
+                    <span key={c} className="tag">{c}</span>
+                  ))}
+                  {f.confidence !== "high" && <span className="tag">{f.confidence} confidence</span>}
+                </span>
                 <span>{f.message}</span>
                 {f.file && (
                   <span className="finding-loc mono">

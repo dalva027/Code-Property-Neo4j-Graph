@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import type { Project, ScanState } from "../types";
 
 export const keys = {
   repos: (path: string) => ["repos", path] as const,
@@ -18,15 +20,36 @@ export function useRepos(path: string) {
   });
 }
 
+/** Projects, polled while any scan is running; a finished scan refreshes that project's views. */
 export function useProjects() {
-  return useQuery({ queryKey: keys.projects, queryFn: api.listProjects });
+  const qc = useQueryClient();
+  const query = useQuery({
+    queryKey: keys.projects,
+    queryFn: api.listProjects,
+    refetchInterval: (q) => (q.state.data?.some((p) => p.status === "scanning") ? 1500 : false),
+  });
+
+  const previous = useRef(new Map<string, ScanState>());
+  useEffect(() => {
+    const now = new Map((query.data ?? []).map((p: Project) => [p.id, p.status] as const));
+    for (const [id, status] of now) {
+      if (previous.current.get(id) === "scanning" && status !== "scanning") {
+        qc.invalidateQueries({ queryKey: keys.graph(id) });
+        qc.invalidateQueries({ queryKey: keys.findings(id) });
+        qc.invalidateQueries({ queryKey: ["node", id] });
+      }
+    }
+    previous.current = now;
+  }, [query.data, qc]);
+
+  return query;
 }
 
-export function useGraph(projectId: string | null) {
+export function useGraph(projectId: string | null, ready = true) {
   return useQuery({
     queryKey: keys.graph(projectId ?? ""),
     queryFn: () => api.getGraph(projectId!),
-    enabled: projectId !== null,
+    enabled: projectId !== null && ready,
     staleTime: 60_000,
   });
 }
@@ -62,11 +85,8 @@ export function useReingestProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.reingestProject,
-    onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: keys.projects });
-      qc.invalidateQueries({ queryKey: keys.graph(id) });
-      qc.invalidateQueries({ queryKey: keys.findings(id) });
-    },
+    // The graph and findings refresh when the scan finishes (see useProjects).
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.projects }),
   });
 }
 

@@ -8,14 +8,14 @@ class UnusedFunctions(Analyzer):
     rule = "unused-function"
     severity = Severity.warning
     description = (
-        "A function with no callers in the graph. Entry points, decorated functions "
-        "(routes, fixtures), tests and private/dunder names are skipped, as are Rust trait methods, "
-        "which are reached through trait dispatch."
+        "A function that nothing calls or passes as a value, apart from itself. Entry points, decorated "
+        "functions (routes, fixtures), tests and private/dunder names are skipped, as are Rust trait "
+        "methods, which are reached through trait dispatch."
     )
 
     QUERY = """
     MATCH (f:Function {project_id: $pid})
-    WHERE NOT EXISTS { ()-[:CALLS]->(f) }
+    WHERE NOT EXISTS { (c)-[:CALLS|REFERENCES]->(f) WHERE c <> f }
       AND NOT f.name STARTS WITH '_'
       AND NOT f.name STARTS WITH 'test'
       AND f.name <> 'main'

@@ -1,6 +1,16 @@
 from pathlib import Path
 
-from app.graph.parsers.base import LanguageParser, ParsedFile, ParsedSymbol
+from app.graph.parsers.base import (
+    LanguageParser,
+    ParsedCall,
+    ParsedFile,
+    ParsedImpl,
+    ParsedLiteral,
+    ParsedOp,
+    ParsedRef,
+    ParsedSymbol,
+    ParsedUnsafe,
+)
 from app.graph.parsers.python import PythonParser
 from app.graph.parsers.rust import RustParser
 
@@ -14,4 +24,5 @@ def parser_for(path: Path) -> LanguageParser | None:
     return _BY_EXTENSION.get(path.suffix.lower())
 
 
-__all__ = ["LanguageParser", "ParsedFile", "ParsedSymbol", "PARSERS", "parser_for"]
+__all__ = ["PARSERS", "LanguageParser", "ParsedCall", "ParsedFile", "ParsedImpl", "ParsedLiteral", "ParsedOp",
+           "ParsedRef", "ParsedSymbol", "ParsedUnsafe", "parser_for"]

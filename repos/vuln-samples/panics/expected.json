@@ -1,0 +1,11 @@
+{
+  "description": "Class P ground truth: panics reachable from main (test code excluded), non-literal indexing, and recursion without a depth guard. Scope is the panic category only; unused helpers also yield quality findings.",
+  "scope": {"categories": ["panic"]},
+  "findings": [
+    {"rule": "panic-reachable-from-entry", "file": "src/main.rs", "line": 14, "note": "config_port: unwrap at 14, expect at 15"},
+    {"rule": "unchecked-index", "file": "src/lookup.rs", "line": 4, "note": "bytes[index]"},
+    {"rule": "unchecked-index", "file": "src/lookup.rs", "line": 14, "note": "v[v.len() - 1], not reachable but still unchecked"},
+    {"rule": "unbounded-recursion", "file": "src/parser.rs", "line": 12, "note": "Node::depth calls itself through a closure"},
+    {"rule": "unbounded-recursion", "file": "src/parser.rs", "line": 25, "note": "parse_list <-> parse_item"}
+  ]
+}

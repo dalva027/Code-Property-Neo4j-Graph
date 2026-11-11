@@ -1,0 +1,10 @@
+{
+  "description": "Planted quality findings in the Python sample; no security category applies.",
+  "findings": [
+    {"rule": "circular-import", "file": "shop/models.py", "line": 1, "note": "models <-> services"},
+    {"rule": "high-complexity", "file": "shop/pricing.py", "line": 1, "note": "apply_discount"},
+    {"rule": "unused-function", "file": "shop/models.py", "line": 15, "note": "DigitalProduct.download_url"},
+    {"rule": "unused-function", "file": "shop/utils.py", "line": 4, "note": "slugify"},
+    {"rule": "unused-function", "file": "shop/utils.py", "line": 9, "note": "legacy_export"}
+  ]
+}

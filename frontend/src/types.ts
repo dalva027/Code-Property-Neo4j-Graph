@@ -1,8 +1,20 @@
 // Mirrors backend/app/models. Keep the two in sync.
 
-export type NodeKind = "file" | "class" | "function";
-export type EdgeKind = "CONTAINS" | "IMPORTS" | "CALLS" | "INHERITS" | "IMPLEMENTS";
-export type Severity = "info" | "warning" | "error";
+export type NodeKind =
+  | "file" | "class" | "function" | "external" | "crate" | "advisory"
+  // security facts: unsafe spans, call sites of interest, redacted secret literals
+  | "unsafe" | "call" | "literal";
+export type EdgeKind =
+  | "CONTAINS" | "IMPORTS" | "CALLS" | "INHERITS" | "IMPLEMENTS"
+  | "REFERENCES" | "HAS_CALL" | "TARGETS" | "HAS_LITERAL"
+  // dependency graph: crates, advisories and how code reaches them
+  | "DEPENDS_ON" | "AFFECTED_BY" | "HAS_FILE" | "USES" | "FROM_CRATE";
+export type Severity = "info" | "warning" | "error" | "critical";
+export type Category = "quality" | "unsafe" | "panic" | "injection" | "dependency" | "crypto";
+export type Confidence = "high" | "medium" | "low";
+export type ScanState = "scanning" | "ready" | "failed";
+
+export type Scalar = string | number | boolean;
 
 export interface GraphNode {
   id: string;
@@ -13,14 +25,16 @@ export interface GraphNode {
   line_start: number;
   line_end: number;
   language: string;
-  subkind?: string | null;   // language-specific flavour: "struct", "trait", "method", ...
+  subkind?: string | null;   // language-specific flavour: "struct", "trait", "method", "macro", ...
   metrics: Record<string, number>;
+  attrs?: Record<string, Scalar | string[]>;   // e.g. an external's path, crate, is_macro
 }
 
 export interface GraphEdge {
   source: string;
   target: string;
   kind: EdgeKind;
+  props?: Record<string, Scalar | string[]>;    // CALLS {line, count}, AFFECTED_BY {kind, functions}
 }
 
 export interface CodeGraph {
@@ -35,6 +49,12 @@ export interface Project {
   file_count: number;
   symbol_count: number;
   created_at: string;
+  status: ScanState;
+  error?: string | null;
+  scan_started_at?: string | null;
+  scan_finished_at?: string | null;
+  warnings?: string[];                          // e.g. a Cargo.toml without Cargo.lock
+  advisory_db_commit?: string | null;           // RustSec database used by the last scan
 }
 
 /** A folder under REPOS_ROOT offered by the picker. */
@@ -62,6 +82,12 @@ export interface Finding {
   node_id: string | null;
   file: string | null;
   line: number | null;
+  line_end?: number | null;
+  category: Category;
+  confidence: Confidence;
+  cwe: string[];
+  evidence: string[];                           // ordered node ids backing the finding
+  rule_version?: string | null;
 }
 
 export interface AnalysisReport {
@@ -69,6 +95,8 @@ export interface AnalysisReport {
   total: number;
   by_severity: Partial<Record<Severity, number>>;
   by_rule: Record<string, number>;
+  by_category: Partial<Record<Category, number>>;
+  catalogue_version: string | null;
 }
 
 export interface NodeDetail {

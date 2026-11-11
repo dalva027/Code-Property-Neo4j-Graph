@@ -1,0 +1,24 @@
+# Rule catalogue manifest. The catalogue is data, not code: the security analyzers read their
+# sources, sinks, sanitizers and patterns from the files listed here.
+#
+# Bump `version` whenever an entry is added, removed or changed. Evaluation runs record it, and
+# the loader also reports a sha256 digest over all files so an unbumped edit is still detectable.
+version: "0.2.0"
+
+files:
+  - sources.yaml
+  - sinks.yaml
+  - sanitizers.yaml
+  - dangerous_ops.yaml
+  - weak_crypto.yaml
+  - secret_patterns.yaml
+
+# Path syntax used in every file:
+#   std::process::Command::new     a function or associated function
+#   std::fs::{read,write}          brace group, expanded by the loader into one entry per name
+#   tokio::fs::*                   any item directly under tokio::fs
+#   ?::unwrap                      a method on a receiver whose type is unknown (tree-sitter)
+#   std::println!                  a macro
+#   md5 (kind: crate)              every item of that crate
+# `args` lists the 0-based argument positions that matter (receiver excluded); `receiver: true`
+# means the receiver itself matters, e.g. a tainted PathBuf passed to `.push`.

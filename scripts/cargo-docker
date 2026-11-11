@@ -1,0 +1,15 @@
+#!/bin/sh
+# Run cargo (with clippy and cargo-geiger available) through Docker, for machines without a
+# Rust toolchain. The repository root is mounted at its own absolute path and the current
+# directory is kept, so `scripts/cargo-docker clippy` behaves like `cargo clippy` run locally.
+#
+#   CLIPPY="$PWD/scripts/cargo-docker clippy" python eval/clippy_compare.py <crate>
+#   scripts/cargo-docker geiger --output-format Json > geiger.json
+set -eu
+ROOT=${CODEGRAPH_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
+exec docker run --rm -i -v "$ROOT:$ROOT" -w "$PWD" \
+  -v codegraph-cargo-registry:/usr/local/cargo/registry \
+  -v codegraph-rustup:/usr/local/rustup \
+  -v codegraph-cargo-geiger:/opt/geiger \
+  -e PATH=/opt/geiger/bin:/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  rust:1-slim-bookworm sh -c 'rustup component add clippy >/dev/null 2>&1; exec cargo "$@"' sh "$@"

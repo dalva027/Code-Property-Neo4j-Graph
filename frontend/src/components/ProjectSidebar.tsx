@@ -49,14 +49,18 @@ export function ProjectSidebar({ selected, onSelect }: Props) {
             <button className="project-row" onClick={() => onSelect(p.id)}>
               <span className="project-name">{p.name}</span>
               <span className="project-meta">
-                {p.file_count} files, {p.symbol_count} symbols
+                {p.status === "scanning"
+                  ? "scanning…"
+                  : p.status === "failed"
+                    ? <span className="error" title={p.error ?? undefined}>scan failed</span>
+                    : `${p.file_count} files, ${p.symbol_count} symbols`}
               </span>
             </button>
             <span className="project-actions">
               <button
                 className="ghost"
                 title="Re-scan source tree"
-                disabled={reingest.isPending}
+                disabled={reingest.isPending || p.status === "scanning"}
                 onClick={() => reingest.mutate(p.id)}
               >
                 rescan

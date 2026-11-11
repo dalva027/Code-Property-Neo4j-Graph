@@ -1,0 +1,14 @@
+{
+  "description": "Class D ground truth: three vulnerable crates with one D2 triage outcome each, plus atty's informational advisories. Lines in Cargo.lock point at each package's name line.",
+  "requires": ["extractor"],
+  "findings": [
+    {"rule": "vulnerable-dependency", "file": "Cargo.lock", "line": 17, "note": "base64 0.5.1, RUSTSEC-2017-0004"},
+    {"rule": "vulnerable-dependency", "file": "Cargo.lock", "line": 57, "note": "smallvec 1.6.0, RUSTSEC-2021-0003"},
+    {"rule": "vulnerable-dependency", "file": "Cargo.lock", "line": 63, "note": "time 0.1.45, RUSTSEC-2020-0071"},
+    {"rule": "vulnerable-api-reachable", "file": "src/main.rs", "line": 8, "note": "buffer calls SmallVec::insert_many"},
+    {"rule": "vulnerable-crate-used", "file": "Cargo.lock", "line": 63, "note": "time is called, but not through an affected function"},
+    {"rule": "vulnerable-dependency-unused", "file": "Cargo.lock", "line": 17, "note": "base64 is declared and never used"},
+    {"rule": "unmaintained-or-unsound-dependency", "file": "Cargo.lock", "line": 6, "note": "atty, RUSTSEC-2024-0375 unmaintained"},
+    {"rule": "unmaintained-or-unsound-dependency", "file": "Cargo.lock", "line": 6, "note": "atty, RUSTSEC-2021-0145 unsound"}
+  ]
+}

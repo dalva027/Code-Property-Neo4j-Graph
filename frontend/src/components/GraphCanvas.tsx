@@ -1,22 +1,31 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { useFindings, useGraph } from "../hooks/useApi";
-import { EDGE_COLOR, EDGE_KINDS, KIND_COLOR, NODE_KINDS, SEVERITY_COLOR, SEVERITY_RANK } from "../theme";
-import type { EdgeKind, GraphNode, NodeKind, Severity } from "../types";
+import {
+  DEFAULT_NODE_KINDS, EDGE_COLOR, EDGE_KINDS, KIND_COLOR, NODE_KINDS, SEVERITY_COLOR, SEVERITY_RANK,
+} from "../theme";
+import type { EdgeKind, GraphNode, NodeKind, ScanState, Severity } from "../types";
 
 type FGNode = GraphNode & { x?: number; y?: number; degree: number; severity?: Severity };
 type FGLink = { source: string; target: string; kind: EdgeKind };
 
 interface Props {
   projectId: string;
+  status: ScanState;
+  error: string | null;       // why the last scan failed
   selectedNodeId: string | null;
   onSelectNode: (id: string) => void;
 }
 
-export function GraphCanvas({ projectId, selectedNodeId, onSelectNode }: Props) {
-  const { data: graph, isLoading, error } = useGraph(projectId);
+export function GraphCanvas({ projectId, status, error: scanError, selectedNodeId, onSelectNode }: Props) {
+  const ready = status === "ready";
+  const { data: graph, isLoading, error } = useGraph(projectId, ready);
   const { data: findings = [] } = useFindings(projectId);
-  const [kinds, setKinds] = useState<Set<NodeKind>>(() => new Set(NODE_KINDS));
+  const [kinds, setKinds] = useState<Set<NodeKind>>(() => new Set(DEFAULT_NODE_KINDS));
+  const externalCount = useMemo(
+    () => graph?.nodes.filter((n) => n.kind === "external").length ?? 0,
+    [graph],
+  );
   const [edgeKinds, setEdgeKinds] = useState<Set<EdgeKind>>(() => new Set(EDGE_KINDS));
   const { ref, size } = useSize();
 
@@ -54,7 +63,7 @@ export function GraphCanvas({ projectId, selectedNodeId, onSelectNode }: Props) 
         <div className="chip-group" role="group" aria-label="Node kinds">
           {NODE_KINDS.map((k) => (
             <Chip key={k} on={kinds.has(k)} color={KIND_COLOR[k]} onClick={() => setKinds(toggle(kinds, k))}>
-              {k}
+              {k === "external" ? `external ${externalCount}` : k}
             </Chip>
           ))}
         </div>
@@ -70,13 +79,17 @@ export function GraphCanvas({ projectId, selectedNodeId, onSelectNode }: Props) 
         </span>
       </div>
 
-      {isLoading && <div className="overlay">Loading graph…</div>}
-      {error && <div className="overlay error">{error.message}</div>}
-      {!isLoading && !error && data.nodes.length === 0 && (
+      {status === "scanning" && <div className="overlay">Scanning the source tree…</div>}
+      {status === "failed" && (
+        <div className="overlay error">Scan failed: {scanError ?? "unknown error"}. Rescan to try again.</div>
+      )}
+      {ready && isLoading && <div className="overlay">Loading graph…</div>}
+      {ready && error && <div className="overlay error">{error.message}</div>}
+      {ready && !isLoading && !error && data.nodes.length === 0 && (
         <div className="overlay muted">No nodes to show. Check the filters or rescan the project.</div>
       )}
 
-      {size.width > 0 && (
+      {ready && size.width > 0 && (
         <ForceGraph2D
           graphData={data}
           width={size.width}

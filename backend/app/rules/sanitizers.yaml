@@ -1,0 +1,21 @@
+# Calls that make tainted data safe for one rule. Structural sanitizers (an allow-list `match`, a
+# bounds check on the same value, `canonicalize` followed by `starts_with`) are recognised by the
+# analyzers themselves and noted here only for reference.
+sanitizers:
+  T1:
+    - {path: "shell_escape::escape"}
+    - {path: "?::parse", note: "parsing into a number type ends the taint"}
+  T2:
+    - {path: "?::bind", note: "bind parameters instead of string building"}
+  T3:
+    - {path: "std::path::Path::file_name"}
+    - {path: "path_clean::clean"}
+    - {path: "std::fs::canonicalize", note: "only together with a starts_with check on the result"}
+  T4:
+    - {path: "url::Url::host_str", note: "only together with a host allow-list check"}
+  T5:
+    - {path: "?::min", note: "clamping the length"}
+  T6:
+    - {path: "?::starts_with", note: "a relative-path check such as starts_with('/') && !starts_with('//')"}
+  T7:
+    - {path: "http::HeaderValue::from_static"}

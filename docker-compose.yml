@@ -15,7 +15,9 @@ services:
       retries: 20
 
   api:
-    build: ./backend
+    build:
+      context: .                    # the image also compiles extractor/
+      dockerfile: backend/Dockerfile
     environment:
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
@@ -25,6 +27,7 @@ services:
     volumes:
       - ./backend/app:/app/app      # hot reload
       - ./repos:/repos:ro           # repositories to analyze
+      - advisory_db:/var/lib/codegraph   # RustSec advisory-db checkout, refreshed daily
     ports:
       - "8000:8000"
     depends_on:
@@ -44,3 +47,4 @@ services:
 
 volumes:
   neo4j_data:
+  advisory_db:

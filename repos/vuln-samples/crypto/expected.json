@@ -1,0 +1,16 @@
+{
+  "description": "Class C ground truth: weak hashes, a constant-seeded and a non-cryptographic RNG, hard-coded secrets, TLS verification switched off, an insecure cipher and weak PBKDF2 rounds. Scope is the crypto category only; the sample also has panic and quality findings.",
+  "scope": {"categories": ["crypto"]},
+  "findings": [
+    {"rule": "weak-hash-algorithm", "file": "src/auth.rs", "line": 6, "note": "md5::compute"},
+    {"rule": "weak-hash-algorithm", "file": "src/auth.rs", "line": 7, "note": "Sha1::new"},
+    {"rule": "insecure-randomness", "file": "src/tokens.rs", "line": 5, "note": "SmallRng::seed_from_u64(42)"},
+    {"rule": "insecure-randomness", "file": "src/tokens.rs", "line": 10, "note": "fastrand::u32"},
+    {"rule": "hardcoded-secret", "file": "src/main.rs", "line": 7, "note": "API_KEY in the AWS access key format"},
+    {"rule": "hardcoded-secret", "file": "src/auth.rs", "line": 19, "note": "admin_password"},
+    {"rule": "tls-verification-disabled", "file": "src/tls.rs", "line": 7, "note": "danger_accept_invalid_certs(true)"},
+    {"rule": "tls-verification-disabled", "file": "src/tls.rs", "line": 14, "note": "SslVerifyMode::NONE"},
+    {"rule": "insecure-cipher-or-mode", "file": "src/tls.rs", "line": 19, "note": "Cipher::des_ede3_cbc"},
+    {"rule": "weak-kdf-parameters", "file": "src/auth.rs", "line": 14, "note": "pbkdf2_hmac with 1000 rounds"}
+  ]
+}

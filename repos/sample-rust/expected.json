@@ -1,0 +1,8 @@
+{
+  "description": "Planted quality findings, and nothing in any security category: sample-rust has no unsafe code, panics on input, taint flows, vulnerable dependencies or crypto.",
+  "findings": [
+    {"rule": "high-complexity", "file": "src/pricing.rs", "line": 4, "note": "crate.pricing.quote"},
+    {"rule": "unused-function", "file": "src/utils.rs", "line": 2, "note": "slugify"},
+    {"rule": "unused-function", "file": "src/utils.rs", "line": 9, "note": "legacy_export"}
+  ]
+}

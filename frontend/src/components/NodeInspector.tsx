@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useNode } from "../hooks/useApi";
 import { KIND_COLOR, SEVERITY_COLOR, shortId } from "../theme";
-import type { EdgeKind, GraphEdge } from "../types";
+import type { EdgeKind, GraphEdge, GraphNode } from "../types";
 
 interface Props {
   projectId: string;
@@ -35,9 +35,30 @@ export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Prop
 
       <h2 className="mono">{node.name}</h2>
       <p className="muted mono small">{node.qualified_name}</p>
-      <p className="muted small">
-        {node.file}, lines {node.line_start}–{node.line_end} · {node.language}
-      </p>
+      <NodeLocation node={node} />
+
+      {node.kind === "advisory" && typeof node.attrs?.title === "string" && (
+        <p>
+          {node.attrs.title}
+          {typeof node.attrs.url === "string" && (
+            <>
+              {" "}
+              <a href={node.attrs.url} target="_blank" rel="noreferrer">details</a>
+            </>
+          )}
+        </p>
+      )}
+
+      {node.attrs && Object.keys(node.attrs).length > 0 && (
+        <dl className="attrs">
+          {Object.entries(node.attrs).filter(([k]) => !LONG_ATTRS.has(k)).map(([k, v]) => (
+            <div key={k} style={{ display: "contents" }}>
+              <dt>{k}</dt>
+              <dd>{Array.isArray(v) ? v.join(", ") : String(v)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
 
       {Object.keys(node.metrics).length > 0 && (
         <dl className="metrics">
@@ -58,7 +79,11 @@ export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Prop
               <li key={f.id} className="inline-finding">
                 <span className="severity-dot" style={{ background: SEVERITY_COLOR[f.severity] }} />
                 <span>
-                  <span className="finding-rule">{f.rule}</span> {f.message}
+                  <span className="finding-rule">{f.rule}</span>
+                  {f.cwe.map((c) => (
+                    <span key={c} className="tag">{c}</span>
+                  ))}{" "}
+                  {f.message}
                 </span>
               </li>
             ))}
@@ -81,28 +106,86 @@ function EdgeList({
   onSelectNode: (id: string) => void;
 }) {
   if (edges.length === 0) return null;
-  const groups = new Map<EdgeKind, string[]>();
-  for (const e of edges) groups.set(e.kind, [...(groups.get(e.kind) ?? []), pick(e)]);
+  const groups = new Map<EdgeKind, GraphEdge[]>();
+  for (const e of edges) groups.set(e.kind, [...(groups.get(e.kind) ?? []), e]);
 
   return (
     <section>
       <h3>
         {title} <span className="muted">{edges.length}</span>
       </h3>
-      {[...groups.entries()].map(([kind, ids]) => (
+      {[...groups.entries()].map(([kind, group]) => (
         <div key={kind} className="edge-group">
           <div className="edge-kind">{kind.toLowerCase()}</div>
           <ul className="plain">
-            {ids.map((id) => (
-              <li key={id}>
-                <button className="link mono" onClick={() => onSelectNode(id)}>
-                  {shortId(id)}
+            {group.map((e) => (
+              <li key={pick(e)}>
+                <button className="link mono" onClick={() => onSelectNode(pick(e))}>
+                  {shortId(pick(e))}
                 </button>
+                <EdgeMeta edge={e} />
               </li>
             ))}
           </ul>
         </div>
       ))}
     </section>
+  );
+}
+
+/** Shown elsewhere (title, link) or too long for the attribute list. */
+const LONG_ATTRS = new Set(["title", "url", "description", "params", "sha256"]);
+
+function NodeLocation({ node }: { node: GraphNode }) {
+  switch (node.kind) {
+    case "external":
+      return <p className="muted small">Called from this project but not defined in it · {node.language}</p>;
+    case "crate":
+      return (
+        <p className="muted small">
+          {node.subkind} · {node.file}, line {node.line_start}
+        </p>
+      );
+    case "advisory":
+      return <p className="muted small">RustSec advisory · {node.subkind}</p>;
+    case "unsafe":
+      return (
+        <p className="muted small">
+          unsafe {node.subkind} · {node.file}, lines {node.line_start}–{node.line_end}
+          {node.attrs?.has_safety_comment ? " · SAFETY comment present" : " · no SAFETY comment"}
+        </p>
+      );
+    case "call":
+      return (
+        <p className="muted small">
+          {node.subkind === "call" ? `call to ${node.attrs?.callee_path}` : `${node.subkind} operation`} ·{" "}
+          {node.file}, line {node.line_start}
+          {node.attrs?.in_unsafe ? " · inside unsafe" : ""}
+        </p>
+      );
+    case "literal":
+      return (
+        <p className="muted small">
+          redacted string literal · {node.file}, line {node.line_start} · value never stored
+        </p>
+      );
+    default:
+      return (
+        <p className="muted small">
+          {node.file}, lines {node.line_start}–{node.line_end} · {node.language}
+        </p>
+      );
+  }
+}
+
+/** CALLS edges carry the first call site's line and how many call sites there are. */
+function EdgeMeta({ edge }: { edge: GraphEdge }) {
+  const { line, count } = edge.props ?? {};
+  if (line === undefined && count === undefined) return null;
+  return (
+    <span className="edge-meta">
+      {line !== undefined && `line ${line}`}
+      {typeof count === "number" && count > 1 && ` · ${count}×`}
+    </span>
   );
 }

@@ -1,0 +1,43 @@
+# Where tainted data does damage, keyed by rule id (see docs/build-plan.md section 3).
+sinks:
+  T1:   # command injection, CWE-78
+    - {path: "std::process::Command::new", args: [0]}
+    - {path: "std::process::Command::{arg,args}", args: [0]}
+    - {path: "tokio::process::Command::new", args: [0]}
+    - {path: "tokio::process::Command::{arg,args}", args: [0]}
+  T2:   # SQL injection, CWE-89; the compile-checked sqlx::query! macros are not sinks
+    - {path: "sqlx::{query,query_as,query_scalar,raw_sql}", args: [0]}
+    - {path: "diesel::sql_query", args: [0]}
+    - {path: "rusqlite::Connection::{execute,prepare,query_row,execute_batch}", args: [0]}
+    - {path: "tokio_postgres::Client::{query,execute,simple_query,batch_execute}", args: [0]}
+  T3:   # path traversal, CWE-22
+    - {path: "std::fs::{read,read_to_string,write,remove_file,remove_dir_all,create_dir_all,copy,rename}", args: [0]}
+    - {path: "std::fs::File::{open,create}", args: [0]}
+    - {path: "tokio::fs::*", args: [0]}
+    - {path: "std::path::Path::join", args: [0], note: "only when the result reaches a fs sink"}
+    - {path: "std::path::PathBuf::push", args: [0], note: "only when the result reaches a fs sink"}
+  T4:   # SSRF, CWE-918
+    - {path: "reqwest::get", args: [0]}
+    - {path: "reqwest::Client::{get,post,put,delete,request}", args: [0]}
+    - {path: "ureq::{get,post,put,delete,request}", args: [0]}
+    - {path: "std::net::TcpStream::connect", args: [0]}
+  T5:   # length or index from input reaching unsafe memory APIs, CWE-119
+    - {path: "std::slice::{from_raw_parts,from_raw_parts_mut}", args: [1]}
+    - {path: "std::vec::Vec::set_len", args: [0]}
+    - {path: "std::ptr::{copy,copy_nonoverlapping}", args: [2]}
+    - {path: "std::alloc::Layout::from_size_align", args: [0]}
+    - {path: "std::alloc::{alloc,alloc_zeroed}", args: [0]}
+    - {path: "?::{get_unchecked,get_unchecked_mut}", args: [0]}
+  T6:   # open redirect, CWE-601
+    - {path: "axum::response::Redirect::{to,permanent,temporary}", args: [0]}
+    - {path: "actix_web::HttpResponse::Found", note: "with a Location header built from input"}
+  T7:   # header injection / response splitting, CWE-113
+    - {path: "http::HeaderValue::{from_str,from_bytes,from_maybe_shared_unchecked}", args: [0]}
+    - {path: "http::HeaderMap::{insert,append}", args: [1]}
+    - {path: "http::response::Builder::header", args: [1]}
+  P4:   # unbounded allocation from input, CWE-770
+    - {path: "std::vec::Vec::with_capacity", args: [0]}
+    - {path: "std::string::String::with_capacity", args: [0]}
+    - {path: "?::{reserve,reserve_exact}", args: [0]}
+    - {path: "std::vec!", note: "the length operand of vec![x; n]"}
+    - {path: "?::read_to_end", note: "unless the reader is wrapped in .take(n)"}

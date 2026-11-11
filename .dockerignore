@@ -1,0 +1,14 @@
+# The API image is built from the repository root; keep the context small.
+.git
+repos
+frontend
+docs
+eval
+**/node_modules
+**/.venv
+**/target
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+backend/.advisory-db*
+backend/*.egg-info

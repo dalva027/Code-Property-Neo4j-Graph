@@ -1,0 +1,398 @@
+{
+  "schema_version": 1,
+  "tool": "codegraph-extract 0.1.0",
+  "lockfile": "/repos/vuln-samples/deps/Cargo.lock",
+  "advisory_db": {
+    "path": "",
+    "commit": "965bf9ad083b58e6340d65829d85217b18be9290",
+    "commit_time": "2026-11-03 21:34:28.0 +01:00:00",
+    "advisory_count": 1403
+  },
+  "crates": [
+    {
+      "key": "atty@0.2.14",
+      "name": "atty",
+      "version": "0.2.14",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
+    },
+    {
+      "key": "base64@0.5.1",
+      "name": "base64",
+      "version": "0.5.1",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "124e5332dfc4e387b4ca058909aa175c0c3eccf03846b7c1a969b9ad067b8df2"
+    },
+    {
+      "key": "byteorder@1.5.0",
+      "name": "byteorder",
+      "version": "1.5.0",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
+    },
+    {
+      "key": "deps-sample@0.1.0",
+      "name": "deps-sample",
+      "version": "0.1.0",
+      "source": "path",
+      "source_id": null,
+      "checksum": null
+    },
+    {
+      "key": "hermit-abi@0.1.19",
+      "name": "hermit-abi",
+      "version": "0.1.19",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
+    },
+    {
+      "key": "libc@0.2.191",
+      "name": "libc",
+      "version": "0.2.191",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
+    },
+    {
+      "key": "smallvec@1.6.0",
+      "name": "smallvec",
+      "version": "1.6.0",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "1a55ca5f3b68e41c979bf8c46a6f1da892ca4db8f94023ce0bd32407573b1ac0"
+    },
+    {
+      "key": "time@0.1.45",
+      "name": "time",
+      "version": "0.1.45",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "1b797afad3f312d1c66a56d11d0316f916356d11bd158fbc6ca6389ff6bf805a"
+    },
+    {
+      "key": "wasi@0.10.0+wasi-snapshot-preview1",
+      "name": "wasi",
+      "version": "0.10.0+wasi-snapshot-preview1",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
+    },
+    {
+      "key": "winapi@0.3.9",
+      "name": "winapi",
+      "version": "0.3.9",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
+    },
+    {
+      "key": "winapi-i686-pc-windows-gnu@0.4.0",
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+    },
+    {
+      "key": "winapi-x86_64-pc-windows-gnu@0.4.0",
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0",
+      "source": "registry",
+      "source_id": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+    }
+  ],
+  "deps": [
+    {
+      "from": "atty@0.2.14",
+      "to": "hermit-abi@0.1.19"
+    },
+    {
+      "from": "atty@0.2.14",
+      "to": "libc@0.2.191"
+    },
+    {
+      "from": "atty@0.2.14",
+      "to": "winapi@0.3.9"
+    },
+    {
+      "from": "base64@0.5.1",
+      "to": "byteorder@1.5.0"
+    },
+    {
+      "from": "deps-sample@0.1.0",
+      "to": "atty@0.2.14"
+    },
+    {
+      "from": "deps-sample@0.1.0",
+      "to": "base64@0.5.1"
+    },
+    {
+      "from": "deps-sample@0.1.0",
+      "to": "smallvec@1.6.0"
+    },
+    {
+      "from": "deps-sample@0.1.0",
+      "to": "time@0.1.45"
+    },
+    {
+      "from": "hermit-abi@0.1.19",
+      "to": "libc@0.2.191"
+    },
+    {
+      "from": "time@0.1.45",
+      "to": "libc@0.2.191"
+    },
+    {
+      "from": "time@0.1.45",
+      "to": "wasi@0.10.0+wasi-snapshot-preview1"
+    },
+    {
+      "from": "time@0.1.45",
+      "to": "winapi@0.3.9"
+    },
+    {
+      "from": "winapi@0.3.9",
+      "to": "winapi-i686-pc-windows-gnu@0.4.0"
+    },
+    {
+      "from": "winapi@0.3.9",
+      "to": "winapi-x86_64-pc-windows-gnu@0.4.0"
+    }
+  ],
+  "advisories": [
+    {
+      "id": "RUSTSEC-2017-0004",
+      "package": "base64",
+      "title": "Integer overflow leads to heap-based buffer overflow in encode_config_buf",
+      "description": "Affected versions of this crate suffered from an integer overflow bug when\ncalculating the size of a buffer to use when encoding base64 using the\n`encode_config_buf` and `encode_config` functions.  If the input string\nwas large, this would cause a buffer to be allocated that was too small.\nSince this function writes to the buffer using unsafe code, it would\nallow an attacker to write beyond the buffer, causing memory corruption\nand possibly the execution of arbitrary code.\n\nThis flaw was corrected by using checked arithmetic to calculate\nthe size of the buffer.",
+      "date": "2017-05-03",
+      "aliases": [
+        "CVE-2017-1000430",
+        "GHSA-x67x-vg9m-65c3"
+      ],
+      "related": [],
+      "categories": [],
+      "keywords": [
+        "memory-corruption"
+      ],
+      "cvss": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cvss_score": 9.8,
+      "severity": "critical",
+      "informational": null,
+      "url": "https://github.com/alicemaz/rust-base64/commit/24ead980daf11ba563e4fb2516187a56a71ad319",
+      "references": [],
+      "withdrawn": null,
+      "patched": [
+        ">=0.5.2"
+      ],
+      "unaffected": [],
+      "functions": {}
+    },
+    {
+      "id": "RUSTSEC-2020-0071",
+      "package": "time",
+      "title": "Potential segfault in the time crate",
+      "description": "### Impact\n\nThe affected functions set environment variables without synchronization. On Unix-like operating systems, this can crash in multithreaded programs. Programs may segfault due to dereferencing a dangling pointer if an environment variable is read in a different thread than the affected functions. This may occur without the user's knowledge, notably in the Rust standard library or third-party libraries.\n\nThe affected functions from time 0.2.7 through 0.2.22 are:\n\n- `time::UtcOffset::local_offset_at`\n- `time::UtcOffset::try_local_offset_at`\n- `time::UtcOffset::current_local_offset`\n- `time::UtcOffset::try_current_local_offset`\n- `time::OffsetDateTime::now_local`\n- `time::OffsetDateTime::try_now_local`\n\nThe affected functions in time 0.1 (all versions) are:\n\n- `time::at_utc`\n- `time::at`\n- `time::now`\n- `time::tzset`\n\nNon-Unix targets (including Windows and wasm) are unaffected.\n\n### Patches\n\nPending a proper fix, the internal method that determines the local offset has been modified to always return `None` on the affected operating systems. This has the effect of returning an `Err` on the `try_*` methods and `UTC` on the non-`try_*` methods.\n\nUsers and library authors with time in their dependency tree should perform `cargo update`, which will pull in the updated, unaffected code.\n\nUsers of time 0.1 do not have a patch and should upgrade to an unaffected version: time 0.2.23 or greater or the 0.3 series.\n\n### Workarounds\n\nA possible workaround for crates affected through the transitive dependency in `chrono`, is to avoid using the default `oldtime` feature dependency of the `chrono` crate by disabling its `default-features` and manually specifying the required features instead.\n\n#### Examples:\n\n`Cargo.toml`:  \n\n```toml\nchrono = { version = \"0.4\", default-features = false, features = [\"serde\"] }\n```\n\n```toml\nchrono = { version = \"0.4.22\", default-features = false, features = [\"clock\"] }\n```\n\nCommandline:  \n\n```bash\ncargo add chrono --no-default-features -F clock\n```\n\nSources:  \n - [chronotope/chrono#602 (comment)](https://github.com/chronotope/chrono/issues/602#issuecomment-1242149249)  \n - [vityafx/serde-aux#21](https://github.com/vityafx/serde-aux/issues/21)",
+      "date": "2020-11-18",
+      "aliases": [
+        "CVE-2020-26235",
+        "GHSA-wcg3-cvx6-7396"
+      ],
+      "related": [],
+      "categories": [
+        "code-execution",
+        "memory-corruption"
+      ],
+      "keywords": [
+        "segfault"
+      ],
+      "cvss": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "cvss_score": 6.2,
+      "severity": "medium",
+      "informational": null,
+      "url": "https://github.com/time-rs/time/issues/293",
+      "references": [],
+      "withdrawn": null,
+      "patched": [
+        ">=0.2.23"
+      ],
+      "unaffected": [
+        "=0.2.0",
+        "=0.2.1",
+        "=0.2.2",
+        "=0.2.3",
+        "=0.2.4",
+        "=0.2.5",
+        "=0.2.6"
+      ],
+      "functions": {
+        "time::OffsetDateTime::now_local": [
+          "<0.2.23"
+        ],
+        "time::OffsetDateTime::try_now_local": [
+          "<0.2.23"
+        ],
+        "time::UtcOffset::current_local_offset": [
+          "<0.2.23"
+        ],
+        "time::UtcOffset::local_offset_at": [
+          "<0.2.23"
+        ],
+        "time::UtcOffset::try_current_local_offset": [
+          "<0.2.23"
+        ],
+        "time::UtcOffset::try_local_offset_at": [
+          "<0.2.23"
+        ],
+        "time::at": [
+          "^0.1"
+        ],
+        "time::at_utc": [
+          "^0.1"
+        ],
+        "time::now": [
+          "^0.1"
+        ]
+      }
+    },
+    {
+      "id": "RUSTSEC-2021-0003",
+      "package": "smallvec",
+      "title": "Buffer overflow in SmallVec::insert_many",
+      "description": "A bug in the `SmallVec::insert_many` method caused it to allocate a buffer that was smaller than needed.  It then wrote past the end of the buffer, causing a buffer overflow and memory corruption on the heap.\n\nThis bug was only triggered if the iterator passed to `insert_many` yielded more items than the lower bound returned from its `size_hint` method.\n \nThe flaw was corrected in smallvec 0.6.14 and 1.6.1, by ensuring that additional space is always reserved for each item inserted.  The fix also simplified the implementation of `insert_many` to use less unsafe code, so it is easier to verify its correctness.\n\nThank you to Yechan Bae ([@Qwaz](https://github.com/Qwaz)) and the Rust group at Georgia Tech’s SSLab for finding and reporting this bug.",
+      "date": "2021-01-08",
+      "aliases": [
+        "CVE-2021-25900",
+        "GHSA-43w2-9j62-hq99"
+      ],
+      "related": [],
+      "categories": [
+        "memory-corruption"
+      ],
+      "keywords": [
+        "buffer-overflow",
+        "heap-overflow",
+        "unsound"
+      ],
+      "cvss": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cvss_score": 9.8,
+      "severity": "critical",
+      "informational": null,
+      "url": "https://github.com/servo/rust-smallvec/issues/252",
+      "references": [],
+      "withdrawn": null,
+      "patched": [
+        ">=0.6.14, <1.0.0",
+        ">=1.6.1"
+      ],
+      "unaffected": [
+        "<0.6.3"
+      ],
+      "functions": {
+        "smallvec::SmallVec::insert_many": [
+          ">=0.6.3, <0.6.14",
+          ">=1.0.0, <1.6.1"
+        ]
+      }
+    },
+    {
+      "id": "RUSTSEC-2021-0145",
+      "package": "atty",
+      "title": "Potential unaligned read",
+      "description": "On windows, `atty` dereferences a potentially unaligned pointer.\n\nIn practice however, the pointer won't be unaligned unless a custom global allocator is used.\n\nIn particular, the `System` allocator on windows uses `HeapAlloc`, which guarantees a large enough alignment.\n\n# atty is Unmaintained\n\nA Pull Request with a fix has been provided over a year ago but the maintainer seems to be unreachable.\n\nLast release of `atty` was almost 3 years ago.\n\n## Possible Alternative(s)\n\nThe below list has not been vetted in any way and may or may not contain alternatives;\n\n - [std::io::IsTerminal](https://doc.rust-lang.org/stable/std/io/trait.IsTerminal.html) - Stable since Rust 1.70.0\n - [is-terminal](https://crates.io/crates/is-terminal) - Standalone crate supporting Rust older than 1.70.0",
+      "date": "2021-07-04",
+      "aliases": [
+        "GHSA-g98v-hv3f-hcfr"
+      ],
+      "related": [],
+      "categories": [],
+      "keywords": [
+        "unaligned-read"
+      ],
+      "cvss": null,
+      "cvss_score": null,
+      "severity": null,
+      "informational": "unsound",
+      "url": "https://github.com/softprops/atty/issues/50",
+      "references": [
+        "https://github.com/softprops/atty/pull/51",
+        "https://github.com/softprops/atty/issues/57"
+      ],
+      "withdrawn": null,
+      "patched": [],
+      "unaffected": [],
+      "functions": {}
+    },
+    {
+      "id": "RUSTSEC-2024-0375",
+      "package": "atty",
+      "title": "`atty` is unmaintained",
+      "description": "The maintainer of `atty` has [published](https://github.com/softprops/atty/commit/5bfdbe9e48c6ca6a4909e8d5b04f5e843a257e93) an official notice that the crate is no longer\nunder development, and that users should instead rely on the functionality in the standard library's [`IsTerminal`](https://doc.rust-lang.org/std/io/trait.IsTerminal.html) trait.\n\n## Alternative(s)\n\n- [std::io::IsTerminal](https://doc.rust-lang.org/stable/std/io/trait.IsTerminal.html) - Stable since Rust 1.70.0 and the recommended replacement per the `atty` maintainer.\n- [is-terminal](https://crates.io/crates/is-terminal) - Standalone crate supporting Rust older than 1.70.0",
+      "date": "2024-09-25",
+      "aliases": [],
+      "related": [],
+      "categories": [],
+      "keywords": [],
+      "cvss": null,
+      "cvss_score": null,
+      "severity": null,
+      "informational": "unmaintained",
+      "url": "https://github.com/softprops/atty/issues/57",
+      "references": [],
+      "withdrawn": null,
+      "patched": [],
+      "unaffected": [],
+      "functions": {}
+    }
+  ],
+  "matches": [
+    {
+      "advisory": "RUSTSEC-2017-0004",
+      "crate_key": "base64@0.5.1",
+      "kind": "vulnerability",
+      "functions": []
+    },
+    {
+      "advisory": "RUSTSEC-2021-0003",
+      "crate_key": "smallvec@1.6.0",
+      "kind": "vulnerability",
+      "functions": [
+        "smallvec::SmallVec::insert_many"
+      ]
+    },
+    {
+      "advisory": "RUSTSEC-2020-0071",
+      "crate_key": "time@0.1.45",
+      "kind": "vulnerability",
+      "functions": [
+        "time::OffsetDateTime::now_local",
+        "time::OffsetDateTime::try_now_local",
+        "time::UtcOffset::current_local_offset",
+        "time::UtcOffset::local_offset_at",
+        "time::UtcOffset::try_current_local_offset",
+        "time::UtcOffset::try_local_offset_at",
+        "time::at",
+        "time::at_utc",
+        "time::now"
+      ]
+    },
+    {
+      "advisory": "RUSTSEC-2024-0375",
+      "crate_key": "atty@0.2.14",
+      "kind": "unmaintained",
+      "functions": []
+    },
+    {
+      "advisory": "RUSTSEC-2021-0145",
+      "crate_key": "atty@0.2.14",
+      "kind": "unsound",
+      "functions": []
+    }
+  ],
+  "warnings": []
+}

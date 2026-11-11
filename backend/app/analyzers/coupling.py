@@ -13,6 +13,7 @@ class CircularImports(Analyzer):
         "Two Python files import each other, directly or through intermediaries. Rust is exempt: "
         "modules in a crate may `use` each other cyclically."
     )
+    languages = ("python",)
 
     QUERY = """
     MATCH (a:File {project_id: $pid, language: 'python'})-[:IMPORTS]->(b:File)

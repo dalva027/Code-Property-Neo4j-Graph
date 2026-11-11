@@ -1,0 +1,15 @@
+[package]
+name = "deps-sample"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Every dependency is pinned to a version with a known RustSec advisory. Do not upgrade them;
+# expected.json depends on exactly these versions.
+[dependencies]
+smallvec = "=1.6.0"     # RUSTSEC-2021-0003, and the code calls the affected insert_many
+time = "=0.1.45"        # RUSTSEC-2020-0071; the code uses time, but not the affected functions
+atty = "=0.2.14"        # unmaintained (RUSTSEC-2024-0375) and unsound (RUSTSEC-2021-0145)
+base64 = "=0.5.1"       # RUSTSEC-2017-0004; declared but never used
+
+[dev-dependencies]
