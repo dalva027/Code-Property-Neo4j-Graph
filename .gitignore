@@ -10,6 +10,7 @@ neo4j_data/
 *.egg-info/
 target/
 .advisory-db*
+.code-facts/
 eval/corpus/
 geiger.json
 geiger.err

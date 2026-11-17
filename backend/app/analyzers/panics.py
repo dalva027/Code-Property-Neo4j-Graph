@@ -7,6 +7,7 @@ depth-like parameter or comparison guards.
 """
 from collections import defaultdict
 
+from app.analyzers import flow
 from app.analyzers.base import Analyzer, register
 from app.analyzers.reach import Reach, load_reach
 from app.graph.repository import GraphRepository
@@ -64,31 +65,53 @@ class UncheckedIndex(_PanicRule):
     rule = "unchecked-index"
     severity = Severity.info
     cwe = ("CWE-129",)
-    description = ("Indexing with a non-literal index (`v[i]`, `map[key]`), which panics when out of range or "
-                   "absent. One finding per function. Informational until phase 3 can tell slices from maps and "
-                   "whether the index is tainted.")
+    description = ("Indexing a slice, array, Vec or str with a non-literal index (`v[i]`, `s[a..b]`), which "
+                   "panics when out of range. One finding per function. With resolved types, maps and other "
+                   "Index implementations are left out; a warning when the index is derived from untrusted "
+                   "input with no bounds check. Without types every indexing expression counts, at low confidence.")
+    version = "2"
 
     QUERY = """
     MATCH (f:Function {project_id: $pid})-[:HAS_CALL]->(c:Call {subkind: 'index'})
-    WHERE NOT coalesce(f.in_test, false)
+    WHERE NOT coalesce(f.in_test, false) AND NOT coalesce(c.base_kind, 'unknown') IN ['map', 'other']
     WITH f, c ORDER BY c.line_start
     RETURN f.id AS fn, f.qualified_name AS qname, f.file AS file, f.line_start AS fn_line,
-           f.entry_distance AS distance, collect({id: c.id, line: c.line_start, detail: c.detail}) AS sites
+           f.entry_distance AS distance,
+           collect({id: c.id, line: c.line_start, detail: c.detail, typed: c.base_kind IS NOT NULL}) AS sites
     ORDER BY file, fn_line
     """
 
     async def run(self, repo: GraphRepository, project_id: str) -> list[Finding]:
         reach = await load_reach(repo, project_id)
+        rows = await repo.query(self.QUERY, pid=project_id)
+        # Phase 3: an index that comes from untrusted input, unchecked.
+        state = await flow.load_flow(repo, project_id)
+        tainted = await flow.taint_paths(
+            repo, state, ({"id": s["id"], "vias": ["arg:0"]} for r in rows for s in r["sites"]),
+            blocked_paths=state.paths_in("sanitizers", "T5"), guards=state.catalogue.guards("T5"),
+        )
         findings = []
-        for r in await repo.query(self.QUERY, pid=project_id):
+        for r in rows:
             sites = r["sites"]
             examples = ", ".join(f"[{s['detail']}] at line {s['line']}" for s in sites[:3])
             more = f" and {len(sites) - 3} more" if len(sites) > 3 else ""
+            hits = [tainted[s["id"]] for s in sites if s["id"] in tainted and not tainted[s["id"]].source.trusted_caller]
+            if hits:
+                hit = min(hits, key=lambda h: h.hops)
+                findings.append(self.finding(
+                    project_id,
+                    f"{r['qname']} indexes {examples}{more} with a value derived from {hit.source.describe()} "
+                    f"and no bounds check; it is {reach.describe(r['fn'])}",
+                    node_id=r["fn"], file=r["file"], line=sites[0]["line"], line_end=sites[-1]["line"],
+                    severity=Severity.warning, confidence=Confidence.medium,
+                    evidence=[*hit.path, hit.sink],
+                ))
+                continue
             findings.append(self.finding(
                 project_id,
                 f"{r['qname']} indexes with a non-literal index {examples}{more}; it is {reach.describe(r['fn'])}",
                 node_id=r["fn"], file=r["file"], line=sites[0]["line"], line_end=sites[-1]["line"],
-                confidence=Confidence.low,
+                confidence=Confidence.medium if all(s["typed"] for s in sites) else Confidence.low,
                 evidence=[*reach.path_to(r["fn"]), *(s["id"] for s in sites[:20])],
             ))
         return findings

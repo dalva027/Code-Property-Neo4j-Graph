@@ -3,6 +3,12 @@
 The patterns live in the catalogue (weak_crypto.yaml, secret_patterns.yaml). Call sites that match
 the catalogue are `Call` nodes, item paths passed as values are `External` nodes reached by
 REFERENCES, and secret-looking string literals are redacted `Literal` nodes.
+
+With the extractor's data-flow graph four rules also look at what flows where (phase 3): a weak
+hash is an error when a password-named variable feeds it (C1); a password feeding any
+general-purpose digest is its own finding (C2); a non-cryptographic RNG is an error when its
+output ends up in a key, token, nonce or salt (C3); and a nonce built from a constant is an
+insecure mode (C6). Without the graph those forms are silent and the rest is unchanged.
 """
 import json
 import re
@@ -24,6 +30,29 @@ MATCH (f:Function {project_id: $pid})-[r:REFERENCES]->(e:External)
 WHERE NOT coalesce(f.in_test, false)
 RETURN f.id AS fn, f.qualified_name AS qname, e.id AS id, e.path AS path, f.file AS file,
        r.line AS line, '[]' AS literal_args, 'reference' AS how
+"""
+# Variables that flow into a call site within a few steps (`password` -> as_bytes() -> digest()).
+FEEDERS = """
+UNWIND $ids AS id
+MATCH (c:Call {id: id})
+MATCH (v:Var)-[:FLOWS_TO|PASSES|RETURNS_TO*1..4]->(c)
+RETURN c.id AS site, collect(DISTINCT v.name) AS names
+"""
+# Variables a call site's result flows into (`SmallRng::..` -> rng -> gen() -> token).
+RECEIVERS = """
+UNWIND $ids AS id
+MATCH (c:Call {id: id})
+MATCH (c)-[:FLOWS_TO|PASSES|RETURNS_TO*1..5]->(v:Var)
+RETURN c.id AS site, collect(DISTINCT v.name) AS names
+"""
+# Locals passed to a call that nothing ever flows into: they hold a constant.
+CONSTANT_ARGS = """
+UNWIND $ids AS id
+MATCH (c:Call {id: id})
+MATCH (v:Var {subkind: 'local'})-[l:FLOWS_TO]->(c)
+WHERE any(x IN l.vias WHERE x STARTS WITH 'arg:')
+  AND NOT EXISTS { ()-[:FLOWS_TO|PASSES|RETURNS_TO]->(v) }
+RETURN c.id AS site, collect(DISTINCT v.name) AS names
 """
 _INT = re.compile(r"^(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|[0-9]+)")
 CRATE_USES = """
@@ -52,12 +81,26 @@ class _CryptoRule(Analyzer):
     group: str = ""
 
     async def sites(self, repo: GraphRepository, project_id: str) -> list[tuple[dict[str, Any], list[Match]]]:
+        """Call sites and referenced items that match this rule's group, in source order.
+
+        A site that matches only wide entries (a whole crate such as `md5`, or `SmallRng::*`) is
+        left out when its function already has a site for the same entry. With resolved receiver types
+        `hasher.update()` and `rng.gen()` are known to belong to the flagged crate or type too, and
+        three findings for one use of SHA-1 would say nothing more than one.
+        """
         matcher = load_catalogue().matcher()
         found = []
-        for r in await repo.query(SITES, pid=project_id):
+        seen: set[tuple[str, str]] = set()
+        rows = await repo.query(SITES, pid=project_id)
+        for r in sorted(rows, key=lambda r: (r["file"] or "", r["line"] or 0, r["id"])):
             hits = [m for m in matcher.match(r["path"], "weak_crypto") if m.group == self.group]
-            if hits:
-                found.append((r, hits))
+            if not hits:
+                continue
+            wide = {(r["fn"], m.entry.path) for m in hits if m.entry.kind == "crate" or m.entry.last == "*"}
+            if len(wide) == len(hits) and wide <= seen:
+                continue
+            seen |= wide
+            found.append((r, hits))
         return found
 
     def site_finding(self, project_id: str, r: dict[str, Any], message: str, severity: Severity | None = None,
@@ -83,6 +126,22 @@ class _CryptoRule(Analyzer):
     def crate_names(self) -> set[str]:
         return {e.path for e in load_catalogue().weak_crypto.get(self.group, []) if e.kind == "crate"}
 
+    @staticmethod
+    async def named(repo: GraphRepository, query: str, sites: list[dict[str, Any]],
+                    patterns: list[str]) -> dict[str, list[str]]:
+        """Per call site, the names of the variables `query` relates it to that match `patterns`
+        (password-like or key-material names from the catalogue). Empty without a data-flow graph."""
+        ids = [r["id"] for r in sites if r["how"] == "call"]
+        if not ids or not patterns:
+            return {}
+        regexes = [re.compile(p) for p in patterns]
+        found = {}
+        for row in await repo.query(query, ids=ids):
+            names = sorted(n for n in row["names"] if any(rx.search(n) for rx in regexes))
+            if names:
+                found[row["site"]] = names
+        return found
+
 
 @register
 class WeakHashAlgorithm(_CryptoRule):
@@ -92,14 +151,53 @@ class WeakHashAlgorithm(_CryptoRule):
     group = "weak_hash"
     description = ("MD5 or SHA-1 in use: the md5/sha1 crates, openssl MessageDigest::{md5,sha1}, or ring's "
                    "SHA1_FOR_LEGACY_USE_ONLY. Fine for checksums of trusted data, not for signatures, "
-                   "certificates or passwords (phase 3 raises it to error when a password flows in).")
+                   "certificates or passwords: an error when a password-named value flows into the call.")
+    version = "2"
 
     async def run(self, repo: GraphRepository, project_id: str) -> list[Finding]:
         findings, files = [], set()
-        for r, _ in await self.sites(repo, project_id):
+        sites = await self.sites(repo, project_id)
+        secrets = load_catalogue().secrets
+        passwords = await self.named(repo, FEEDERS, [r for r, _ in sites], secrets.passwords if secrets else [])
+        for r, _ in sites:
             files.add(r["file"])
-            findings.append(self.site_finding(project_id, r, f"{r['qname']} uses the weak hash {r['path']}"))
+            if names := passwords.get(r["id"]):
+                findings.append(self.site_finding(
+                    project_id, r, f"{r['qname']} hashes `{names[0]}` with the weak hash {r['path']}",
+                    severity=Severity.error))
+            else:
+                findings.append(self.site_finding(project_id, r, f"{r['qname']} uses the weak hash {r['path']}"))
         findings += await self.crate_use_findings(repo, project_id, self.crate_names(), files, "the weak-hash")
+        return findings
+
+
+@register
+class WeakPasswordHashing(_CryptoRule):
+    rule = "weak-password-hashing"
+    severity = Severity.error
+    cwe = ("CWE-916",)
+    group = "fast_hash"
+    description = ("A password-named value is hashed with a general-purpose digest (SHA-2, SHA-3, BLAKE, MD5, "
+                   "SHA-1) instead of a password hash such as argon2, bcrypt, scrypt or pbkdf2. Fast digests "
+                   "make offline guessing cheap. Needs the data-flow graph; names decide what a password is.")
+
+    async def run(self, repo: GraphRepository, project_id: str) -> list[Finding]:
+        matcher = load_catalogue().matcher()
+        secrets = load_catalogue().secrets
+        rows = [r for r in await repo.query(SITES, pid=project_id)
+                if r["how"] == "call" and any(m.group == self.group for m in matcher.match(r["path"], "weak_crypto"))]
+        passwords = await self.named(repo, FEEDERS, rows, secrets.passwords if secrets else [])
+        findings, seen = [], set()
+        for r in sorted(rows, key=lambda r: (r["file"] or "", r["line"] or 0, r["id"])):
+            names = passwords.get(r["id"])
+            if not names or (r["fn"], r["line"]) in seen:
+                continue
+            seen.add((r["fn"], r["line"]))
+            findings.append(self.site_finding(
+                project_id, r,
+                f"{r['qname']} hashes `{names[0]}` with {r['path']}, a fast general-purpose digest; use a "
+                "password hash (argon2, bcrypt, scrypt, pbkdf2)",
+                confidence=Confidence.medium))
         return findings
 
 
@@ -111,11 +209,16 @@ class InsecureRandomness(_CryptoRule):
     group = "insecure_rng"
     description = ("A non-cryptographic or deterministically seeded random number generator: SmallRng, StepRng, "
                    "fastrand, oorandom, or seed_from_u64/from_seed with a constant seed. thread_rng, OsRng and "
-                   "getrandom are fine. Whether the output becomes a key or token is phase 3 work.")
+                   "getrandom are fine. An error when the output flows into a variable named like key material "
+                   "(key, token, nonce, salt, secret).")
+    version = "2"
 
     async def run(self, repo: GraphRepository, project_id: str) -> list[Finding]:
         findings, files = [], set()
-        for r, hits in await self.sites(repo, project_id):
+        sites = await self.sites(repo, project_id)
+        secrets = load_catalogue().secrets
+        feeds = await self.named(repo, RECEIVERS, [r for r, _ in sites], secrets.key_material if secrets else [])
+        for r, hits in sites:
             seed_entries = [m for m in hits if m.entry.args]
             literals = _literals(r)
             if seed_entries and not any(i in literals for m in seed_entries for i in (m.entry.args or [])):
@@ -131,7 +234,12 @@ class InsecureRandomness(_CryptoRule):
                 message = f"{r['qname']} uses the non-cryptographic RNG {r['path']}"
                 confidence = Confidence.medium
             files.add(r["file"])
-            findings.append(self.site_finding(project_id, r, message, confidence=confidence))
+            if names := feeds.get(r["id"]):
+                findings.append(self.site_finding(
+                    project_id, r, f"{message}; its output becomes `{names[0]}`", severity=Severity.error,
+                    confidence=Confidence.high))
+            else:
+                findings.append(self.site_finding(project_id, r, message, confidence=confidence))
         findings += await self.crate_use_findings(repo, project_id, self.crate_names(), files,
                                                   "the non-cryptographic RNG")
         return findings
@@ -206,6 +314,8 @@ class TlsVerificationDisabled(_CryptoRule):
             name = r["path"].rsplit("::", 1)[-1]
             if any(m.entry.args for m in hits):
                 arg = literals.get(0)
+                if arg and arg[0] == "path":
+                    arg = None                                   # a named constant: value unknown
                 if arg and arg[1] == "false":
                     continue
                 if arg:
@@ -236,8 +346,10 @@ class InsecureCipherOrMode(_CryptoRule):
     cwe = ("CWE-327",)
     group = "insecure_cipher"
     description = ("A broken or unauthenticated cipher or mode: the des, rc2, rc4, blowfish or ecb crates, or "
-                   "openssl's DES, RC4, Blowfish and AES-ECB ciphers. A constant nonce reaching an AEAD is "
-                   "phase 3 work.")
+                   "openssl's DES, RC4, Blowfish and AES-ECB ciphers. Also an AEAD nonce built from a constant "
+                   "(a literal, or a local nothing flows into): reusing a nonce under one key breaks AES-GCM "
+                   "and ChaCha20-Poly1305 (CWE-323).")
+    version = "2"
 
     async def run(self, repo: GraphRepository, project_id: str) -> list[Finding]:
         findings, files = [], set()
@@ -245,6 +357,30 @@ class InsecureCipherOrMode(_CryptoRule):
             files.add(r["file"])
             findings.append(self.site_finding(project_id, r, f"{r['qname']} uses the insecure cipher {r['path']}"))
         findings += await self.crate_use_findings(repo, project_id, self.crate_names(), files, "the insecure-cipher")
+        findings += await self.constant_nonces(repo, project_id)
+        return findings
+
+    async def constant_nonces(self, repo: GraphRepository, project_id: str) -> list[Finding]:
+        matcher = load_catalogue().matcher()
+        rows = [r for r in await repo.query(SITES, pid=project_id)
+                if r["how"] == "call" and any(m.group == "nonce" for m in matcher.match(r["path"], "weak_crypto"))]
+        if not rows:
+            return []
+        constants = {row["site"]: sorted(row["names"])
+                     for row in await repo.query(CONSTANT_ARGS, ids=[r["id"] for r in rows])}
+        findings = []
+        for r in sorted(rows, key=lambda r: (r["file"] or "", r["line"] or 0, r["id"])):
+            literal = next((text for kind, text in _literals(r).values() if kind in ("str", "array")), None)
+            names = constants.get(r["id"])
+            if literal is None and not names:
+                continue
+            what = f"the constant `{names[0]}`" if names else "a literal"
+            findings.append(self.finding(
+                project_id, f"{r['qname']} builds a nonce from {what} via {r['path']}; a repeated nonce breaks "
+                "the cipher's confidentiality and authenticity",
+                node_id=r["fn"], file=r["file"], line=r["line"], cwe=["CWE-323"],
+                confidence=Confidence.medium, evidence=[r["fn"], r["id"]],
+            ))
         return findings
 
 

@@ -83,3 +83,14 @@ def test_relative_imports_resolve_against_package():
     parsed = PythonParser().parse("pkg/sub/mod.py", "from ..core import thing\nfrom . import sibling\n")
     assert "pkg.core" in parsed.imports
     assert "pkg.sub.sibling" in parsed.imports
+
+
+def test_a_file_too_deep_to_walk_is_skipped_not_fatal(tmp_path: Path):
+    """One pathological file (generated code, a huge expression) must not fail the whole scan."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "ok.rs").write_text("pub fn fine() -> u32 { 1 }\n")
+    (tmp_path / "src" / "deep.rs").write_text("fn f(a: u32) -> u32 { " + " + ".join(["a"] * 3000) + " }\n")
+    builder = GraphBuilder()
+    graph = builder.build(tmp_path, "p")
+    assert {n.file for n in graph.nodes if n.kind == "file"} == {"src/ok.rs"}
+    assert builder.warnings == ["src/deep.rs was skipped: its expressions nest too deeply to parse"]

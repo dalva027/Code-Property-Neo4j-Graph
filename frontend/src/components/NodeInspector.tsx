@@ -169,6 +169,14 @@ function NodeLocation({ node }: { node: GraphNode }) {
           redacted string literal · {node.file}, line {node.line_start} · value never stored
         </p>
       );
+    case "var":
+      return (
+        <p className="muted small">
+          {node.subkind === "ret" ? "return value" : node.subkind === "param" ? "parameter" : "local variable"}
+          {typeof node.attrs?.type === "string" ? ` of type ${node.attrs.type}` : ""} · {node.file}, line{" "}
+          {node.line_start}
+        </p>
+      );
     default:
       return (
         <p className="muted small">

@@ -3,6 +3,7 @@
 All syntactic. `Unsafe` nodes mark spans, `Call` nodes mark the call sites the catalogue cares
 about (with `in_unsafe`), and `entry_distance` on functions comes from the ingest pass.
 """
+from app.analyzers import flow
 from app.analyzers.base import Analyzer, register
 from app.analyzers.reach import load_reach
 from app.graph.repository import GraphRepository
@@ -22,6 +23,10 @@ _OP_CWE = {
     "write_bytes": "CWE-787", "copy": "CWE-787", "copy_nonoverlapping": "CWE-787",
     "offset": "CWE-119", "add": "CWE-119", "sub": "CWE-119", "from_ptr": "CWE-476",
 }
+
+
+# Method names that are a dangerous operation only on a raw pointer.
+_POINTER_ONLY = {"offset", "add", "sub"}
 
 
 class _UnsafeRule(Analyzer):
@@ -107,8 +112,10 @@ class DangerousUnsafeOp(_UnsafeRule):
     cwe = ("CWE-119",)
     description = ("A call inside `unsafe` to an operation from the catalogue's dangerous_ops list: transmute, "
                    "slice::from_raw_parts, Vec::set_len, get_unchecked, ptr::{read,write,copy}, Box::from_raw, "
-                   "mem::{zeroed,uninitialized}, MaybeUninit::assume_init, raw pointer arithmetic. Methods on an "
-                   "unknown receiver (`?::add`) are medium confidence until phase 3 adds types.")
+                   "mem::{zeroed,uninitialized}, MaybeUninit::assume_init, raw pointer arithmetic. With resolved "
+                   "types, add/offset/sub count only on raw pointers; a method on an unknown receiver (`?::add`) "
+                   "is medium confidence. An error when a value derived from untrusted input reaches an argument.")
+    version = "2"
 
     QUERY = """
     MATCH (f:Function {project_id: $pid})-[:HAS_CALL]->(c:Call {in_unsafe: true})
@@ -121,19 +128,45 @@ class DangerousUnsafeOp(_UnsafeRule):
     async def run(self, repo: GraphRepository, project_id: str) -> list[Finding]:
         matcher = load_catalogue().matcher()
         reach = await load_reach(repo, project_id)
-        findings = []
+        rows = []
         for r in await repo.query(self.QUERY, pid=project_id):
             if not any(m.group in ("memory", "ffi") for m in matcher.match(r["path"], "dangerous_ops")):
                 continue
             name = r["path"].rsplit("::", 1)[-1]
+            # `a.add(b)` is pointer arithmetic only on a raw pointer; with a resolved receiver the
+            # path says which it is (`pointer::add` against `usize::add` or `std::ops::Add::add`).
+            if name in _POINTER_ONLY and not r["path"].startswith(("?::", "pointer::")):
+                continue
+            rows.append(r)
+
+        # Phase 3: is an argument derived from untrusted input?
+        state = await flow.load_flow(repo, project_id)
+        tainted = await flow.taint_paths(
+            repo, state, ({"id": r["id"], "vias": [v for v in flow.ANY_VIA if v != "macro"]} for r in rows),
+            blocked_paths=state.paths_in("sanitizers", "T5"), guards=state.catalogue.guards("T5"),
+        )
+        findings = []
+        for r in rows:
+            name = r["path"].rsplit("::", 1)[-1]
             unknown = r["path"].startswith("?::")
+            where = [*reach.path_to(r["fn"]), r["id"]] if r["distance"] is not None else [r["fn"], r["id"]]
+            hit = tainted.get(r["id"])
+            if hit is not None and not hit.source.trusted_caller:
+                findings.append(self.finding(
+                    project_id,
+                    f"{r['qname']} calls {r['path']} inside unsafe with a value derived from "
+                    f"{hit.source.describe()}; the function is {reach.describe(r['fn'])}",
+                    node_id=r["fn"], file=r["file"], line=r["line"], severity=Severity.error,
+                    confidence=Confidence.medium if unknown else Confidence.high,
+                    cwe=[_OP_CWE.get(name, "CWE-119")], evidence=[*hit.path, r["id"]],
+                ))
+                continue
             findings.append(self.finding(
                 project_id,
                 f"{r['qname']} calls {r['path']} inside unsafe; the function is {reach.describe(r['fn'])}",
                 node_id=r["fn"], file=r["file"], line=r["line"],
                 confidence=Confidence.medium if unknown else Confidence.high,
-                cwe=[_OP_CWE.get(name, "CWE-119")],
-                evidence=[*reach.path_to(r["fn"]), r["id"]] if r["distance"] is not None else [r["fn"], r["id"]],
+                cwe=[_OP_CWE.get(name, "CWE-119")], evidence=where,
             ))
         return findings
 

@@ -7,6 +7,10 @@ touches the projects it creates and deletes them afterwards. Without Docker or t
 tests are skipped. Cases that declare `"requires": ["extractor"]` also need codegraph-extract
 (CODEGRAPH_EXTRACTOR, e.g. scripts/codegraph-extract-docker) and an advisory database
 (ADVISORY_DB_PATH); without them they are skipped.
+
+The harness runs in whichever mode the environment configures: with the binary every Cargo case is
+scanned through the rust-analyzer extractor, and with `CODE_FACTS=off` (or no binary) through
+tree-sitter alone. The cases that do not require the extractor must score 1/1 both ways.
 """
 import os
 from collections.abc import Iterator
@@ -66,6 +70,7 @@ def test_cases_are_discovered():
     assert {"sample", "sample-rust", "vuln-samples/deps"} <= names
 
 
+@pytest.mark.extractor
 @pytest.mark.parametrize("expected_file", CASES, ids=[p.parent.relative_to(REPOS).as_posix() for p in CASES])
 async def test_ground_truth(expected_file: Path, repo: GraphRepository):
     expected = load_expected(expected_file)

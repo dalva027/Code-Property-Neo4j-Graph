@@ -1,27 +1,49 @@
-# Where untrusted data enters (class T and the tainted forms of U3, P3, P4).
-# kind: call (the return value is tainted), type (a parameter of this type is tainted, used for
-# web-framework extractors), derive (every field of a struct with this derive is tainted).
-# Library mode: for library crates the analyzers also treat every parameter of a `pub` fn as a
-# source; that is behaviour, not data, so it is not listed here.
+# Where untrusted data enters (class T and the tainted forms of U3, P2, P3, P4).
+# kind: call (the call's result is tainted, and through it whatever the call writes into a
+# `&mut` argument), type (a parameter declared with this type is tainted: web-framework
+# extractors). The group name says how much to trust the source: findings from `files` are off
+# unless TAINT_FILES_ARE_UNTRUSTED is set, `reader` is weak (see below), everything else is
+# attacker-controlled.
+# Library mode: for a library crate every parameter of a `pub` fn is also a source, at lower
+# confidence; that is behaviour, not data, so it is not listed here.
 sources:
   env:
     - {path: "std::env::{args,args_os,var,var_os,vars,vars_os}"}
+    - {path: "clap::Parser::{parse,try_parse,parse_from,try_parse_from}", note: "the parsed command line"}
   stdin:
     - {path: "std::io::stdin"}
-    - {path: "std::io::Stdin::{read_line,lines,lock}", receiver: true}
+    - {path: "std::io::Stdin::{read_line,lines,lock}"}
+    - {path: "tokio::io::stdin"}
   network:
     - {path: "std::net::TcpStream::{read,read_to_end,read_to_string,read_exact}"}
     - {path: "std::net::UdpSocket::{recv,recv_from}"}
+    - {path: "tokio::net::TcpStream::{read,read_to_end,read_to_string,read_exact,try_read}"}
+    - {path: "tokio::net::UdpSocket::{recv,recv_from}"}
     - {path: "tokio::io::AsyncReadExt::{read,read_to_end,read_to_string,read_exact}"}
   files:
     - {path: "std::fs::{read,read_to_string}", note: "trusted unless the project configures otherwise"}
+    - {path: "tokio::fs::{read,read_to_string}"}
+    - {path: "std::fs::File::{read,read_exact,read_to_end,read_to_string,read_vectored}"}
+    - {path: "tokio::fs::File::{read,read_exact,read_to_end,read_to_string,poll_read}"}
+  # Bytes read through a reader whose concrete type is not known (a generic `R: Read`, a trait
+  # object, an adapter). In a decoder or a protocol implementation this is the input. Weaker than
+  # the groups above: lower severity and confidence, like a library's public parameters.
+  reader:
+    - {path: "std::io::Read::{read,read_exact,read_to_end,read_to_string,read_vectored}"}
+    - {path: "std::io::BufRead::{read_line,read_until,fill_buf,lines}"}
+    - {path: "tokio::io::AsyncRead::poll_read"}
+    - {path: "futures_io::AsyncRead::{poll_read,poll_read_vectored}"}
+    - {path: "futures_io::AsyncBufRead::poll_fill_buf"}
   axum:
-    - {path: "axum::extract::{Path,Query,Json,Form,RawQuery,Multipart,Request}", kind: type}
-    - {path: "axum::http::HeaderMap", kind: type}
+    - {path: "axum::extract::{Path,Query,Json,Form,RawQuery,Multipart,Request,RawForm,Host,OriginalUri}", kind: type}
+    - {path: "axum::http::{HeaderMap,Uri}", kind: type}
+    - {path: "http::{HeaderMap,Uri}", kind: type}
     - {path: "axum::body::Bytes", kind: type}
+    - {path: "bytes::Bytes", kind: type}
   actix_web:
     - {path: "actix_web::web::{Path,Query,Json,Form,Bytes,Payload}", kind: type}
-    - {path: "actix_web::HttpRequest::{match_info,query_string,headers,uri}", receiver: true}
+    - {path: "actix_web::HttpRequest", kind: type}
+    - {path: "actix_web::HttpRequest::{match_info,query_string,headers,uri}"}
   rocket:
     - {path: "rocket::form::Form", kind: type}
     - {path: "rocket::serde::json::Json", kind: type}
@@ -31,7 +53,7 @@ sources:
     - {path: "warp::body::{json,form,bytes}"}
   hyper:
     - {path: "hyper::Request", kind: type}
+    - {path: "http::Request", kind: type}
   tonic:
-    - {path: "tonic::Request::into_inner", receiver: true}
-  clap:
-    - {path: "clap::Parser", kind: derive}
+    - {path: "tonic::Request", kind: type}
+    - {path: "tonic::Request::into_inner"}

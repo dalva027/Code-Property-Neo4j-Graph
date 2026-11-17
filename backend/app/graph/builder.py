@@ -13,6 +13,13 @@ rule catalogue (so rules have a line and literal arguments per site), and redact
 Functions passed as values give `REFERENCES` edges; a function handed to a web-framework routing
 builder (`get(handler)`, `.service(index)`, `routes![..]`) or taking a framework extractor type is
 marked `entry_kind = handler`, and `pub` functions of a library crate `pub_api`.
+
+For Cargo projects the rust-analyzer extractor (app/graph/facts.py) overlays resolved and typed
+facts onto the parse before the graph is assembled. Every call site it reports becomes a `Call`
+node; parameters, locals and return values become `Var` nodes declared by their function; and its
+def-use edges become `FLOWS_TO` (within a function), `PASSES` (argument to the callee's parameter)
+and `RETURNS_TO` (the callee's return value to the call site). Without the extractor none of
+those exist and the graph is the tree-sitter one.
 """
 import json
 import logging
@@ -20,8 +27,10 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
+from app.graph import facts
 from app.graph.parsers import ParsedCall, ParsedFile, parser_for
-from app.models.graph import CodeGraph, EdgeKind, GraphEdge, GraphNode, NodeKind
+from app.graph.parsers.base import ParsedOp
+from app.models.graph import AttrValue, CodeGraph, EdgeKind, GraphEdge, GraphNode, NodeKind
 from app.rules import Catalogue, PathMatcher, load_catalogue
 
 log = logging.getLogger(__name__)
@@ -38,15 +47,22 @@ HANDLER_VIA = {
 }
 _ENTRY_PRIORITY = {"test": 0, "main": 1, "ffi": 2, "handler": 3, "pub_api": 4}
 _METHOD_SUBKINDS = {"method", "trait fn", "trait impl fn"}
+_FLOW_EDGES = {"flow": EdgeKind.flows_to, "pass": EdgeKind.passes, "ret": EdgeKind.returns_to}
 
 
 class GraphBuilder:
     def __init__(self, ignored_dirs: set[str] | None = None, catalogue: Catalogue | None = None):
         self.ignored_dirs = ignored_dirs or IGNORED_DIRS
         self.matcher: PathMatcher = (catalogue or load_catalogue()).matcher()
+        # What the code extractor contributed to the last build; None when it did not run.
+        self.code_facts: facts.OverlayStats | None = None
+        self.warnings: list[str] = []      # files the last build had to skip, for the scan notes
 
     def build(self, root: Path, project_id: str) -> CodeGraph:
-        return self._assemble(self._parse_tree(root), project_id)
+        self.warnings = []
+        files = self._parse_tree(root)
+        self.code_facts = facts.load_code_facts(root, files, self.matcher, self.ignored_dirs)
+        return self._assemble(files, project_id)
 
     # -- pass 1: parse every supported file ---------------------------------------
     def _parse_tree(self, root: Path) -> list[ParsedFile]:
@@ -64,6 +80,12 @@ class GraphBuilder:
                     parsed.append(parser.parse(rel, source))
                 except SyntaxError as exc:
                     log.warning("skipping %s: %s", rel, exc)
+                except RecursionError:
+                    # The tree-sitter walk recurses over the syntax tree; a method chain or a
+                    # binary expression a few hundred levels deep exhausts Python's stack. One
+                    # such file must not fail the scan of a whole project.
+                    log.warning("skipping %s: expression nesting too deep to walk", rel)
+                    self.warnings.append(f"{rel} was skipped: its expressions nest too deeply to parse")
         return parsed
 
     # -- pass 2: build nodes, then resolve edges -----------------------------------
@@ -139,13 +161,20 @@ class GraphBuilder:
             return edge
 
         externals: dict[str, str] = {}                  # `::` path -> node id
+        site_nodes: dict[int, str] = {}                 # extractor site id -> Call node id
+        var_nodes: dict[int, str] = {}                  # extractor var id -> Var node id
 
-        def external(path: str, language: str, is_macro: bool = False, subkind: str | None = None) -> str:
+        def external(path: str, language: str, is_macro: bool = False, subkind: str | None = None,
+                     crate: str | None = None, aliases: tuple[str, ...] = ()) -> str:
             if path not in externals:
                 head, _, _ = path.partition("::")
-                attrs: dict[str, str | bool] = {"path": path, "is_macro": is_macro}
-                if head and head != "?" and "::" in path:
+                attrs: dict[str, AttrValue] = {"path": path, "is_macro": is_macro}
+                if crate:
+                    attrs["crate"] = crate              # the defining crate, known to the extractor
+                elif head and head != "?" and "::" in path:
                     attrs["crate"] = head
+                if aliases:
+                    attrs["aliases"] = list(aliases)    # other paths the same item goes by
                 node = GraphNode(
                     id=nid(path), kind=NodeKind.external, name=path.rsplit("::", 1)[-1],
                     qualified_name=path, language=language,
@@ -161,18 +190,36 @@ class GraphBuilder:
                 node.attrs["entry_kind"] = kind
 
         def call_site(pf: ParsedFile, call: ParsedCall, caller_id: str, target_id: str | None) -> None:
+            suffix = f":{call.seq}" if call.seq else ""
             site = GraphNode(
-                id=nid(f"{pf.path}#call:{call.line}:{call.col}"), kind=NodeKind.call,
-                name=(call.external or call.callee).rsplit("::", 1)[-1],
+                id=nid(f"{pf.path}#call:{call.line}:{call.col}{suffix}"), kind=NodeKind.call,
+                name=(call.external or call.callee).rsplit("::", 1)[-1].rsplit(".", 1)[-1],
                 qualified_name=f"{call.caller}#call@{call.line}", file=pf.path, line_start=call.line,
                 line_end=call.line, language=pf.language, subkind="call",
                 attrs={"callee_path": call.external or call.callee, "in_unsafe": call.in_unsafe,
-                       "literal_args": json.dumps([list(a) for a in call.literal_args], separators=(",", ":"))},
+                       "literal_args": json.dumps([list(a) for a in call.literal_args], separators=(",", ":")),
+                       **dict(call.attrs)},
             )
             if emit(site):
                 add(caller_id, site.id, EdgeKind.has_call)
                 if target_id:
                     add(site.id, target_id, EdgeKind.targets)
+            if call.site is not None:
+                site_nodes.setdefault(call.site, site.id)
+
+        def op_site(pf: ParsedFile, op: ParsedOp) -> None:
+            suffix = f":{op.seq}" if op.seq else ""
+            node = GraphNode(
+                id=nid(f"{pf.path}#op:{op.line}:{op.col}{suffix}"), kind=NodeKind.call, name=op.op,
+                qualified_name=f"{op.caller}#{op.op}@{op.line}", file=pf.path, line_start=op.line,
+                line_end=op.line, language=pf.language, subkind=op.op,
+                attrs={"callee_path": f"ops::{op.op}", "in_unsafe": op.in_unsafe, "detail": op.detail,
+                       **dict(op.attrs)},
+            )
+            if emit(node):
+                add(nid(op.caller), node.id, EdgeKind.has_call)
+            if op.site is not None:
+                site_nodes.setdefault(op.site, node.id)
 
         for pf in files:
             src = nid(pf.path)
@@ -182,20 +229,26 @@ class GraphBuilder:
 
             for call in pf.calls:
                 target = self._resolve(call.callee, call.caller, by_qname, by_name) if call.resolvable else None
+                target_id: str | None
                 if target:
                     target_id = nid(target)
                 elif call.external:
-                    target_id = external(call.external, pf.language, call.is_macro)
+                    target_id = external(call.external, pf.language, call.is_macro, crate=call.crate,
+                                         aliases=call.aliases)
+                elif call.site is not None:
+                    target_id = None                            # a data-flow site with no known callee
                 else:
                     continue                                    # unresolved, nothing to point at
                 caller_id = nid(call.caller)
-                if edge := add(caller_id, target_id, EdgeKind.calls):
+                if target_id and (edge := add(caller_id, target_id, EdgeKind.calls)):
                     edge.props["count"] = int(edge.props.get("count", 0)) + 1
                     edge.props.setdefault("line", call.line)
                     if call.in_unsafe:
                         edge.props["unsafe"] = True
-                if call.external and self.matcher.matches(call.external):
-                    call_site(pf, call, caller_id, target_id if call.external else None)
+                # The extractor's sites all get a node (data flow runs through them); tree-sitter's
+                # only where the catalogue needs a line and literal arguments.
+                if call.site is not None or (call.external and self.matcher.matches(call.external)):
+                    call_site(pf, call, caller_id, target_id)
 
             for ref in pf.refs:
                 caller_id = nid(ref.caller)
@@ -243,14 +296,34 @@ class GraphBuilder:
                     add(owner, node.id, EdgeKind.contains)
 
             for op in pf.ops:
+                op_site(pf, op)
+
+            for var in pf.vars:
+                owner = nid(var.function)
+                if owner not in ids:
+                    continue
+                base = f"{var.function}#ret" if var.kind == "ret" else \
+                    f"{pf.path}#var:{var.line}:{var.col}:{var.name}"
+                node_id = nid(base)
+                if node_id in ids:                              # several locals made by one macro call
+                    node_id = nid(f"{base}~{var.id}")
+                attrs: dict[str, AttrValue] = {"ty_kind": var.ty_kind}
+                if var.type:
+                    attrs["type"] = var.type
+                if var.type_path:
+                    attrs["type_path"] = var.type_path
+                if var.param_type:
+                    attrs["param_type"] = var.param_type
+                if var.guards:
+                    attrs["guards"] = list(var.guards)
                 node = GraphNode(
-                    id=nid(f"{pf.path}#op:{op.line}:{op.col}"), kind=NodeKind.call, name=op.op,
-                    qualified_name=f"{op.caller}#{op.op}@{op.line}", file=pf.path, line_start=op.line,
-                    line_end=op.line, language=pf.language, subkind=op.op,
-                    attrs={"callee_path": f"ops::{op.op}", "in_unsafe": op.in_unsafe, "detail": op.detail},
+                    id=node_id, kind=NodeKind.var, name=var.name, qualified_name=f"{var.function}#{var.name}",
+                    file=pf.path, line_start=var.line, line_end=var.line, language=pf.language, subkind=var.kind,
+                    metrics={"index": var.index} if var.index is not None else {}, attrs=attrs,
                 )
                 if emit(node):
-                    add(nid(op.caller), node.id, EdgeKind.has_call)
+                    add(owner, node_id, EdgeKind.declares)
+                var_nodes[var.id] = node_id
 
             for lit in pf.literals:
                 owner = nid(lit.container) if lit.container and nid(lit.container) in ids else src
@@ -268,6 +341,25 @@ class GraphBuilder:
                 )
                 if emit(node):
                     add(owner, node.id, EdgeKind.has_literal)
+
+        # Data flow: the extractor's edges, now that both ends have node ids. An edge keeps every
+        # `via` it was seen with, because a sink asks which argument position a value arrived at.
+        for pf in files:
+            for flow in pf.flows:
+                source = (var_nodes if flow.source[0] == "v" else site_nodes).get(flow.source[1])
+                target = (var_nodes if flow.target[0] == "v" else site_nodes).get(flow.target[1])
+                if not source or not target or source == target:
+                    continue
+                key = (source, target, _FLOW_EDGES[flow.kind])
+                if key in seen:
+                    vias = seen[key].props["vias"]
+                    if isinstance(vias, list) and flow.via not in vias:
+                        vias.append(flow.via)
+                else:
+                    add(source, target, _FLOW_EDGES[flow.kind], {"via": flow.via, "vias": [flow.via]})
+            for trait_fn, impl_fn in pf.dispatch:
+                if nid(trait_fn) in ids and nid(impl_fn) in ids:
+                    add(nid(trait_fn), nid(impl_fn), EdgeKind.references, {"via": "dispatch"})
 
         # Handlers by parameter type: a function taking a framework extractor (catalogue sources).
         for node in graph.nodes:

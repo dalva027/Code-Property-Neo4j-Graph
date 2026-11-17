@@ -10,7 +10,7 @@ directory per vulnerability class, added in the phase that ships the class's rul
 | `unsafe/` | U, unsafe code | 2 |
 | `panics/` | P, panics and denial of service | 2 |
 | `crypto/` | C, cryptography and secrets | 2 |
-| `taint/` | T, injection via taint tracking | 3 |
+| `taint/` | T, injection via taint tracking, and the flow forms of P and C rules; a workspace of an axum service and a CLI | 3 |
 
 Each crate carries an `expected.json` at its root listing every finding the analyzers must
 produce, as `{rule, file, line}` with paths relative to the crate. Every planted bug gets a
@@ -18,7 +18,9 @@ matching safe variant, such as a sanitized flow or a documented `unsafe` block, 
 nothing. The format and the matching rules are documented in `backend/app/evaluate.py`.
 
 The harness in `backend/tests/test_ground_truth.py` picks up every `expected.json` under `repos/`
-and requires precision and recall of 1 for each rule in scope. To score one crate by hand:
+and requires precision and recall of 1 for each rule in scope. `deps/` and `taint/` need the
+`codegraph-extract` binary (`CODEGRAPH_EXTRACTOR`) and are skipped without it. To score one crate
+by hand:
 
 ```bash
 cd backend

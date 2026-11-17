@@ -16,8 +16,6 @@ advisories. Everything else is plain Python over files and the code graph:
 import json
 import logging
 import os
-import shutil
-import subprocess
 import threading
 import tomllib
 from collections import defaultdict, deque
@@ -29,6 +27,8 @@ from pydantic import ValidationError
 
 from app.config import settings
 from app.graph.builder import IGNORED_DIRS
+from app.graph.extractor import ExtractorUnavailable, extractor_path  # noqa: F401  (re-exported)
+from app.graph.extractor import run as run_extractor_cli
 from app.models.deps import (
     DEPS_SCHEMA_VERSION,
     AffectedEdge,
@@ -48,41 +48,21 @@ _KIND_PRIORITY = {"normal": 0, "build": 1, "dev": 2}
 _db_lock = threading.Lock()      # one extractor at a time: they share the advisory-db checkout
 
 
-class ExtractorUnavailable(RuntimeError):
-    """The extractor binary is not installed or could not produce facts."""
-
-
 def norm(name: str) -> str:
     """Crate names use dashes in Cargo.toml and underscores in code."""
     return name.replace("-", "_")
 
 
 # -- facts -----------------------------------------------------------------------------------
-def extractor_path() -> str | None:
-    configured = settings.codegraph_extractor
-    if os.sep in configured or "/" in configured:
-        return configured if Path(configured).is_file() else None
-    return shutil.which(configured)
-
-
 def run_extractor(lockfile: Path) -> DepsFacts:
-    binary = extractor_path()
-    if binary is None:
-        raise ExtractorUnavailable(f"{settings.codegraph_extractor} not found")
-    cmd = [binary, "deps", "--lockfile", str(lockfile), "--advisory-db", settings.advisory_db_path,
-           "--max-age-hours", str(settings.advisory_db_max_age_hours)]
+    args = ["deps", "--lockfile", str(lockfile), "--advisory-db", settings.advisory_db_path,
+            "--max-age-hours", str(settings.advisory_db_max_age_hours)]
     if settings.advisory_db_offline:
-        cmd.append("--offline")
+        args.append("--offline")
     with _db_lock:
-        try:
-            done = subprocess.run(cmd, capture_output=True, text=True, timeout=settings.extractor_timeout_seconds,
-                                  check=False)
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            raise ExtractorUnavailable(f"running {binary}: {exc}") from exc
-    if done.returncode != 0:
-        raise ExtractorUnavailable(f"{binary} exited {done.returncode}: {done.stderr.strip()[-500:]}")
+        stdout = run_extractor_cli(args, settings.extractor_timeout_seconds)
     try:
-        facts = DepsFacts.model_validate(json.loads(done.stdout))
+        facts = DepsFacts.model_validate(json.loads(stdout))
     except (json.JSONDecodeError, ValidationError) as exc:
         raise ExtractorUnavailable(f"unreadable extractor output: {exc}") from exc
     if facts.schema_version != DEPS_SCHEMA_VERSION:

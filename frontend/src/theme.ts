@@ -11,6 +11,7 @@ export const KIND_COLOR: Record<NodeKind, string> = {
   unsafe: "#ff9f43",
   call: "#8fd3ff",
   literal: "#ffd166",
+  var: "#b8e986",
 };
 
 export const EDGE_COLOR: Record<EdgeKind, string> = {
@@ -23,6 +24,10 @@ export const EDGE_COLOR: Record<EdgeKind, string> = {
   HAS_CALL: "rgba(143, 211, 255, 0.25)",
   TARGETS: "rgba(143, 211, 255, 0.25)",
   HAS_LITERAL: "rgba(255, 209, 102, 0.35)",
+  DECLARES: "rgba(230, 233, 240, 0.10)",
+  FLOWS_TO: "rgba(184, 233, 134, 0.6)",
+  PASSES: "rgba(184, 233, 134, 0.6)",
+  RETURNS_TO: "rgba(184, 233, 134, 0.6)",
   DEPENDS_ON: "rgba(201, 167, 255, 0.45)",
   AFFECTED_BY: "rgba(255, 123, 139, 0.7)",
   HAS_FILE: "rgba(230, 233, 240, 0.10)",

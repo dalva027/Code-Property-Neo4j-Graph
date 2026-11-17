@@ -439,6 +439,8 @@ class _Walker:
             kind=kind, name=_text(name) if name is not None else "?", qualified_name=qname,
             line_start=self._line(node), line_end=node.end_point[0] + 1 + self.line_offset,
             parent=parent, metrics=metrics, subkind=subkind, attrs=attrs or {},
+            name_line=self._line(name) if name is not None else 0,
+            name_col=name.start_point[1] if name is not None else 0,
         )
         self.parsed.symbols.append(sym)
         return sym

@@ -1,8 +1,8 @@
 [package]
 name = "codegraph-extract"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "Extracts dependency and advisory facts from a Cargo workspace for codegraph"
+description = "Extracts dependency, advisory and code facts from a Cargo workspace for codegraph"
 publish = false
 
 [dependencies]
@@ -12,6 +12,16 @@ rustsec = { version = "0.33", features = ["git"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
+# rust-analyzer as a library, for the `code` subcommand. The ra_ap_* crates are published weekly with
+# no API stability, so every one is pinned to the same exact version and only src/ra.rs imports them.
+ra_ap_hir = "=0.0.358"
+ra_ap_ide_db = "=0.0.358"
+ra_ap_load-cargo = "=0.0.358"
+ra_ap_project_model = "=0.0.358"
+ra_ap_syntax = "=0.0.358"
+ra_ap_vfs = "=0.0.358"
+ra_ap_paths = "=0.0.358"
+
 [profile.release]
 strip = true
-lto = "thin"
+lto = "off"          # rust-analyzer is a large dependency tree; thin LTO needs more memory than a 4 GB Docker VM has

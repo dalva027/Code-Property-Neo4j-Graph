@@ -16,8 +16,13 @@ services:
 
   api:
     build:
-      context: .                    # the image also compiles extractor/
+      context: .                    # the image also compiles extractor/ and carries the Rust toolchain
       dockerfile: backend/Dockerfile
+      args:
+        CARGO_BUILD_JOBS: ${CARGO_BUILD_JOBS:-}   # e.g. 2 on a Docker VM with 4 GB
+    # rust-analyzer holds a whole workspace in memory. The cap makes a workspace that is too large
+    # end that one extraction (the scan falls back to tree-sitter) instead of starving Neo4j.
+    mem_limit: ${API_MEMORY:-2500m}
     environment:
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
@@ -27,7 +32,8 @@ services:
     volumes:
       - ./backend/app:/app/app      # hot reload
       - ./repos:/repos:ro           # repositories to analyze
-      - advisory_db:/var/lib/codegraph   # RustSec advisory-db checkout, refreshed daily
+      - advisory_db:/var/lib/codegraph   # RustSec advisory-db checkout (refreshed daily), cached code facts
+      - cargo_registry:/usr/local/cargo/registry   # dependency sources rust-analyzer reads
     ports:
       - "8000:8000"
     depends_on:
@@ -48,3 +54,4 @@ services:
 volumes:
   neo4j_data:
   advisory_db:
+  cargo_registry:

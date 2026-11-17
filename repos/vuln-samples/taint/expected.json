@@ -1,0 +1,31 @@
+{
+  "description": "Ground truth for the rules that follow data flow (phase 3): the seven injection rules of class T, the tainted panic rules P3 and P4, and the flow forms of C1, C2, C3 and C6. Every rule has at least one function where input reaches the dangerous call and one that does the same thing safely; the safe ones must stay silent. The expected lines are the ones marked `// EXPECT <rule>` in the sources. Scope is those rules only: the samples also have unsafe, panic, dependency and quality findings. Needs the rust-analyzer extractor: without it there is no data flow and none of the class T rules can fire.",
+  "requires": ["extractor"],
+  "scope": {
+    "rules": ["command-injection", "sql-injection", "path-traversal", "ssrf", "unsafe-length-from-input", "open-redirect", "header-injection", "overflow-candidate", "unbounded-allocation", "weak-password-hashing", "weak-hash-algorithm", "insecure-cipher-or-mode", "insecure-randomness"]
+  },
+  "findings": [
+    {"rule": "command-injection", "file": "cli/src/commands.rs", "line": 15, "note": "run_tool"},
+    {"rule": "command-injection", "file": "cli/src/commands.rs", "line": 34, "note": "shell"},
+    {"rule": "sql-injection", "file": "cli/src/commands.rs", "line": 41, "note": "delete_user"},
+    {"rule": "path-traversal", "file": "cli/src/commands.rs", "line": 55, "note": "show_file"},
+    {"rule": "ssrf", "file": "cli/src/commands.rs", "line": 71, "note": "probe"},
+    {"rule": "unsafe-length-from-input", "file": "cli/src/commands.rs", "line": 84, "note": "grow"},
+    {"rule": "open-redirect", "file": "cli/src/net.rs", "line": 15, "note": "redirect"},
+    {"rule": "header-injection", "file": "cli/src/net.rs", "line": 30, "note": "echo_id"},
+    {"rule": "unbounded-allocation", "file": "cli/src/numbers.rs", "line": 7, "note": "table"},
+    {"rule": "overflow-candidate", "file": "cli/src/numbers.rs", "line": 21, "note": "frame_size"},
+    {"rule": "weak-password-hashing", "file": "cli/src/secrets.rs", "line": 11, "note": "store_password"},
+    {"rule": "weak-hash-algorithm", "file": "cli/src/secrets.rs", "line": 16, "note": "legacy_password_hash"},
+    {"rule": "weak-password-hashing", "file": "cli/src/secrets.rs", "line": 16, "note": "legacy_password_hash"},
+    {"rule": "insecure-cipher-or-mode", "file": "cli/src/secrets.rs", "line": 28, "note": "seal"},
+    {"rule": "insecure-randomness", "file": "cli/src/secrets.rs", "line": 39, "note": "session_token"},
+    {"rule": "command-injection", "file": "service/src/handlers.rs", "line": 17, "note": "ping"},
+    {"rule": "sql-injection", "file": "service/src/handlers.rs", "line": 35, "note": "find_user"},
+    {"rule": "path-traversal", "file": "service/src/handlers.rs", "line": 52, "note": "read_file"},
+    {"rule": "ssrf", "file": "service/src/handlers.rs", "line": 70, "note": "proxy"},
+    {"rule": "unsafe-length-from-input", "file": "service/src/handlers.rs", "line": 91, "note": "peek"},
+    {"rule": "open-redirect", "file": "service/src/handlers.rs", "line": 107, "note": "login_done"},
+    {"rule": "header-injection", "file": "service/src/handlers.rs", "line": 123, "note": "set_language"}
+  ]
+}

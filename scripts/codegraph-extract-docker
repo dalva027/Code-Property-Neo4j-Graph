@@ -4,8 +4,17 @@
 #   docker build -t codegraph-extract extractor
 #   CODEGRAPH_EXTRACTOR=$PWD/scripts/codegraph-extract-docker uvicorn app.main:app
 #
-# The repository root is mounted at its own absolute path, so lockfile and advisory-db paths that
-# point inside the repository mean the same thing in the container.
+# The repository root is mounted at its own absolute path, so lockfile, manifest and advisory-db
+# paths that point inside the repository mean the same thing in the container. The `code`
+# subcommand runs `cargo metadata`, which downloads the scanned project's dependencies; they are
+# kept in the `codegraph-cargo-registry` volume, shared with scripts/cargo-docker.
+#
+# rust-analyzer keeps the standard library, every dependency and the workspace in memory. The
+# container is capped at CODEGRAPH_EXTRACT_MEMORY (default 2g) so that a workspace that is too large
+# ends this one run (exit 137, and the scan falls back to tree-sitter) instead of pushing the
+# Docker VM out of memory and taking other containers, the Neo4j one included, down with it.
 set -eu
 ROOT=${CODEGRAPH_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
-exec docker run --rm -i -v "$ROOT:$ROOT" -w "$PWD" "${CODEGRAPH_EXTRACT_IMAGE:-codegraph-extract}" "$@"
+exec docker run --rm -i --memory "${CODEGRAPH_EXTRACT_MEMORY:-2g}" -v "$ROOT:$ROOT" -w "$PWD" \
+  -v codegraph-cargo-registry:/usr/local/cargo/registry \
+  "${CODEGRAPH_EXTRACT_IMAGE:-codegraph-extract}" "$@"

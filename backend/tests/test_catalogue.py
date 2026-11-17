@@ -56,3 +56,51 @@ def test_digest_changes_with_content(tmp_path: Path):
     first = load_catalogue_from(tmp_path).digest
     (tmp_path / "sinks.yaml").write_text("sinks:\n  T1:\n    - {path: 'a::c'}\n")
     assert load_catalogue_from(tmp_path).digest != first
+
+
+# -- phase 3: guards, templates and conditions ---------------------------------------------------
+def test_guards_are_checks_not_paths():
+    cat = load_catalogue()
+    assert {"starts_with", "match"} <= set(cat.guards("T3"))
+    assert cat.guards("T5") == ["cmp"]
+    assert cat.guards("T2") and not cat.guards("nope")
+    matcher = cat.matcher()
+    # A guard names a check on a variable: it must not make `x.starts_with(..)` a sanitizer call.
+    assert not matcher.matches("str::starts_with", "sanitizers")
+    assert [m.group for m in matcher.match("usize::min", "sanitizers")] == ["T5", "P3", "P4"]
+
+
+def test_typed_paths_match_under_any_of_their_names():
+    matcher = load_catalogue().matcher()
+    assert {m.group for m in matcher.match("std::option::Option::unwrap", "dangerous_ops")} == {"panic"}
+    assert matcher.matches("pointer::add", "dangerous_ops")             # `?::add`, by last segment
+    assert {m.group for m in matcher.match("std::net::TcpStream::read", "sources")} == {"network"}
+    assert {m.group for m in matcher.match("std::io::Read::read", "sources")} == {"reader"}
+    assert {m.group for m in matcher.match("std::fs::File::read", "sources")} == {"files"}
+    assert {m.group for m in matcher.match("axum::extract::Query", "sources")} == {"axum"}
+
+
+def test_template_and_when_are_validated(tmp_path: Path):
+    (tmp_path / "catalogue.yaml").write_text("version: '1'\nfiles: [sinks.yaml]\n")
+    (tmp_path / "sinks.yaml").write_text("sinks:\n  T6:\n    - {path: 'std::write!', template: '(unclosed'}\n")
+    with pytest.raises(CatalogueError):
+        load_catalogue_from(tmp_path)
+    (tmp_path / "sinks.yaml").write_text("sinks:\n  T6:\n    - {path: 'a::b', args: [1], when: {0: '(?i)location'}}\n")
+    entry = load_catalogue_from(tmp_path).sinks["T6"][0]
+    assert entry.when == {0: "(?i)location"} and entry.args == [1]
+
+
+def test_header_templates():
+    """T6 takes a hand-written Location header, T7 any other hand-written header line."""
+    import re
+
+    cat = load_catalogue()
+    t6 = next(e.template for e in cat.sinks["T6"] if e.template)
+    t7 = next(e.template for e in cat.sinks["T7"] if e.template)
+    location = r'"HTTP/1.1 302 Found\r\nLocation: {}\r\n\r\n"'
+    header = r'"HTTP/1.1 200 OK\r\nX-Request-Id: {}\r\n\r\n"'
+    split = '"{header}: "'
+    assert re.search(t6, location) and not re.search(t7, location)
+    assert re.search(t7, header) and not re.search(t6, header)
+    assert re.search(t7, split)
+    assert not re.search(t7, r'"{} {} {}\r\n"') and not re.search(t7, '"listening on {addr}"')

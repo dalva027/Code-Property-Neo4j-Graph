@@ -45,8 +45,14 @@ async def build_and_store(project: Project, repo: GraphRepository) -> None:
     in a worker thread.
     """
     root = Path(project.root)
-    graph = await asyncio.to_thread(GraphBuilder().build, root, project.id)
+    builder = GraphBuilder()
+    graph = await asyncio.to_thread(builder.build, root, project.id)
     deps = await asyncio.to_thread(scan_dependencies, root, project.id, graph)
+    deps.warnings.extend(builder.warnings)
+    if (code := builder.code_facts) is not None:
+        deps.warnings.extend(code.warnings)
+        log.info("%s: code facts for %d of %d functions, %d of %d call sites resolved, %d flow edges",
+                 project.name, code.analyzed, code.functions, code.resolved_sites, code.sites, code.flows)
     await repo.replace_graph(project.id, graph)
     await repo.replace_dependencies(project.id, deps)
     reachable = await repo.mark_reachability(project.id)

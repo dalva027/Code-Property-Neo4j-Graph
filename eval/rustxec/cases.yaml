@@ -1,0 +1,1837 @@
+# RustXec cases: ground truth and expected rules (docs/build-plan.md sections 7.4 and 7.8).
+#
+# FREEZE RULE. `expected_rules` was decided per case from the advisory text and the fix diff
+# alone, before the run step was executed for the first time, and is frozen at the date and rule
+# catalogue version in `frozen`. No analyzer, rule or finding was consulted. Detection, fix-awareness
+# and triage rank are reported over the cases with a non-empty `expected_rules`; coverage over all
+# 102; both always together. After freezing, a change to `expected_rules`, `ground_truth` or
+# `excluded` is never a silent edit: it is appended to `amendments` below as
+#   - {id: RUSTSEC-..., date: YYYY-MM-DD, field: expected_rules, old: [...], new: [...], reason: "..."}
+# and the case keeps its original `frozen` stamp.
+#
+# Fields: id; class (U/P/T/C from the RustSec category, section 7.3); repo; vuln_rev (fix commit's
+# first parent); fixed_rev; member (directory of the package's Cargo.toml, "" = repository root);
+# ground_truth (entries with `function` are qualified names of our parser with their file and line
+# span in the vulnerable snapshot; entries without are file-level; `outside_member: true` marks a
+# file that is not under `member`; `advisory_path` is the path as the advisory names it); granularity
+# (function | file); source (advisory | diff | manual); excluded (reason, or null); expected_rules
+# with expected_reason; frozen; review (only on the hand-reviewed sample; the reviews so far are
+# machine reviews pending human confirmation and are labelled as such).
+# File paths are relative to the repository root. Written by eval/rustxec/localize.py, which adds
+# missing cases and never rewrites an existing entry without --overwrite-auto.
+
+amendments: []
+cases:
+
+  - id: RUSTSEC-2025-0022
+    class: U
+    repo: https://github.com/sfackler/rust-openssl
+    vuln_rev: "7c7b2e6c9f95e77e56ab37af70b16de75beff387"
+    fixed_rev: "87085bd67896b7f92e6de35d081f607a334beae4"
+    member: "openssl"
+    ground_truth:
+      - {file: "openssl/src/md.rs", function: "crate.md.Md.fetch", lines: [99, 117], advisory_path: "openssl::md::Md::fetch"}
+      - {file: "openssl/src/cipher.rs", function: "crate.cipher.Cipher.fetch", lines: [137, 154], advisory_path: "openssl::cipher::Cipher::fetch"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "dangling pointer: a temporary CString is dropped before the FFI call uses its as_ptr(); no U3 operation is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2025-0021
+    class: C
+    repo: https://github.com/GitoxideLabs/gitoxide
+    vuln_rev: "cd96b6439d119c5189a8e7349d2e7e2533db41b5"
+    fixed_rev: "4660f7a6f71873311f68f170b0f1f6659a02829d"
+    member: "gix-features"
+    ground_truth:
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.bytes_of_file", lines: [95, 109], advisory_path: "gix_features::hash::bytes_of_file"}
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.bytes", lines: [113, 121], advisory_path: "gix_features::hash::bytes"}
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.bytes_with_hasher", lines: [125, 157], advisory_path: "gix_features::hash::bytes_with_hasher"}
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.hasher", lines: [77, 81], advisory_path: "gix_features::hash::hasher"}
+      - {file: null, advisory_path: "gix_features::hash::Hasher::update"}
+      - {file: null, advisory_path: "gix_features::hash::Hasher::digest"}
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.write.Write.new", lines: [191, 198], advisory_path: "gix_features::hash::Write::new"}
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.write.Write.<Write>.write", lines: [175, 179], advisory_path: "gix_features::hash::Write::write"}
+      - {file: "gix-features/src/hash.rs", function: "crate.hash.write.Write.<Write>.flush", lines: [181, 183], advisory_path: "gix_features::hash::Write::flush"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: [weak-hash-algorithm]
+    expected_reason: "SHA-1 through the sha1 / sha1_smol crates in gix-features/src/hash.rs, with no collision detection"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2025-0020
+    class: U
+    repo: https://github.com/PyO3/pyo3
+    vuln_rev: "4aca459fd30441fa006c3eb388c812047f5465ce"
+    fixed_rev: "5caaa371dce8fe8a93c64d7a465c3c2c80ce6e2f"
+    member: ""
+    ground_truth:
+      - {file: "src/types/string.rs", function: "crate.types.string.PyString.from_object", lines: [214, 228]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "&str handed to the C API as a C string without a NUL terminator (as_ptr().cast()); not a U3 operation"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2025-0018
+    class: U
+    repo: https://github.com/nrc/xmas-elf
+    vuln_rev: "f747ecfa3b9b33d5c5760f76a9a31d8ce31a62c7"
+    fixed_rev: "57685c35512a57269086314a42a70441af4ef451"
+    member: ""
+    ground_truth:
+      - {file: "src/hash.rs", function: "crate.hash.HashTable.get_bucket", lines: [28, 34]}
+      - {file: "src/hash.rs", function: "crate.hash.HashTable.get_chain", lines: [36, 43]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: []
+    expected_reason: "out-of-bounds read through ptr.offset(index) and a raw deref, index checked only against counts taken from the file; pointer offset/deref is in neither U3's nor T5's list"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: HashTable.lookup (signature-only change), SectionHeader.get_data (call-site adaptation) and two file-level entries for the struct and enum definitions; the vulnerable functions are get_bucket and get_chain, which the advisory also names", date: 2026-11-11}
+
+  - id: RUSTSEC-2025-0016
+    class: T
+    repo: https://github.com/radekvit/pared
+    vuln_rev: "65bbc627e31a2fb43fc3b94c7ca1177536c7c626"
+    fixed_rev: "108f540ea8acb6073751a1aa386085c1cdc4fd1e"
+    member: ""
+    ground_truth:
+      - {file: "src/prc.rs", function: "crate.prc.Prc.from_rc", lines: [163, 177], advisory_path: "pared::prc::Prc::from_rc"}
+      - {file: "src/prc.rs", function: "crate.prc.Prc.project", lines: [241, 254], advisory_path: "pared::prc::Prc::project"}
+      - {file: "src/prc.rs", function: "crate.prc.Prc.try_from_rc", lines: [205, 219], advisory_path: "pared::prc::Prc::try_from_rc"}
+      - {file: "src/sync.rs", function: "crate.sync.Parc.from_arc", lines: [208, 224], advisory_path: "pared::sync::Parc::from_arc"}
+      - {file: "src/sync.rs", function: "crate.sync.Parc.project", lines: [289, 305], advisory_path: "pared::sync::Parc::project"}
+      - {file: "src/sync.rs", function: "crate.sync.Parc.try_from_arc", lines: [253, 267], advisory_path: "pared::sync::Parc::try_from_arc"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing 'static bound lets a projected Rc/Arc outlive borrowed data (lifetime unsoundness); nothing syntactic to match"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2025-0015
+    class: P
+    repo: https://github.com/pimeys/rust-web-push
+    vuln_rev: "dfe3a6ea2a4f0b035121073330992a4c8f7a5963"
+    fixed_rev: "8447ed86bf3f24629abd7022b94104bf3cd64453"
+    member: ""
+    ground_truth:
+      - {file: "src/clients/hyper_client.rs", function: "crate.clients.hyper_client.HyperWebPushClient.<WebPushClient>.send", lines: [47, 99]}
+      - {file: "src/clients/isahc_client.rs", function: "crate.clients.isahc_client.IsahcWebPushClient.<WebPushClient>.send", lines: [48, 102]}
+      - {file: "src/error.rs", function: "crate.error.WebPushError.short_description", lines: [117, 138]}
+      - {file: "src/error.rs", function: "crate.error.WebPushError.<Display>.fmt", lines: [142, 166]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [unbounded-allocation]
+    expected_reason: "Vec::with_capacity(content_length) with the endpoint's Content-Length (hyper client) and read_to_end without take (isahc client)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2025-0005
+    class: U
+    repo: https://github.com/mozilla/grcov
+    vuln_rev: "9d7b882be80f666b22da956697a26579dd884b34"
+    fixed_rev: "c8219563bc91615dd4a27884a5c63f09db8d03bb"
+    member: ""
+    ground_truth:
+      - {file: "src/covdir.rs", function: "crate.covdir.CDFileStats.get_coverage", lines: [56, 69]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op, unsafe-length-from-input]
+    expected_reason: "lines.get_unchecked_mut((*line_num - 1) as usize) in an unsafe block of CDFileStats::get_coverage, index taken from the coverage data"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0441
+    class: P
+    repo: https://github.com/bytecodealliance/wasmtime
+    vuln_rev: "7279e466903e18e115347b6932c073cb339bd6b0"
+    fixed_rev: "7f57d0bb0948fa56cc950278d0db230ed10e8664"
+    member: "crates/wasmtime"
+    ground_truth:
+      - {file: "crates/runtime/src/instance.rs", function: "crate.instance.Instance.table_init", lines: [791, 812], outside_member: true}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "panic comes from assert_eq! in Table::funcrefs_mut after a func/externref table type confusion; P1 does not list assert macros"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: Instance::table_init is where the wrongly typed empty segment is built; the panic itself is raised two calls further down (Table::init_func -> funcrefs_mut). Note the file is in crates/runtime, outside the wasmtime member", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0437
+    class: P
+    repo: https://github.com/stepancheg/rust-protobuf
+    vuln_rev: "8d045d255201d3b48394864d9aa8ea09388a1ea0"
+    fixed_rev: "f06992f46771c0a092593b9ebf7afd48740b3ed6"
+    member: "protobuf"
+    ground_truth:
+      - {file: "protobuf/src/coded_input_stream/mod.rs", function: "crate.coded_input_stream.CodedInputStream.skip_group", lines: [513, 522]}
+      - {file: "protobuf/src/coded_input_stream/mod.rs", function: "crate.coded_input_stream.CodedInputStream.merge_message", lines: [632, 648]}
+      - {file: "protobuf/src/coded_input_stream/mod.rs", function: "crate.coded_input_stream.CodedInputStream.merge_message.DecrRecursion.<Drop>.drop", lines: [636, 638]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [unbounded-recursion]
+    expected_reason: "CodedInputStream::skip_group calls itself (and skip_field -> skip_group) for nested unknown groups with no recursion-depth check"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0406
+    class: P
+    repo: https://github.com/dfinity/stable-structures
+    vuln_rev: "7507d0fff096d0d60d2c4a14cc08b2d02fa70ef7"
+    fixed_rev: "4f6b8ae521884833498bae26369c353c10f28ea7"
+    member: ""
+    ground_truth:
+      - {file: "src/btreemap.rs", function: "crate.btreemap.BTreeMap.remove_helper", lines: [641, 1003]}
+      - {file: "src/btreemap.rs", function: "crate.btreemap.BTreeMap.merge", lines: [1201, 1207]}
+      - {file: "src/btreemap/node.rs", function: "crate.btreemap.node.Node.merge", lines: [295, 315]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "memory leak: overflow chunks of a B-tree node are not deallocated (allocator bookkeeping logic); no rule models it"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0402
+    class: C
+    repo: https://github.com/rust-lang/hashbrown
+    vuln_rev: "986305abb886d87d3686178937032202fc6f09d7"
+    fixed_rev: "dd56b3b19713c893f4a0e2344dff8e74073b7089"
+    member: ""
+    ground_truth: []
+    granularity: file
+    source: diff
+    excluded: "vulnerable code absent: the fix link is the 0.15.1 release pull request (changelog and version bump only); the borsh implementation was removed by an earlier commit and is in neither snapshot"
+    expected_rules: []
+    expected_reason: "non-canonical borsh serialization (encoding logic); and the vulnerable code is in neither snapshot"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0401
+    class: P
+    repo: https://github.com/trifectatechfoundation/zlib-rs
+    vuln_rev: "db8c732889662def462b20e0e6f69ae153fb8375"
+    fixed_rev: "af224e7c29863a30fb2cd9af85678de85256cc15"
+    member: "zlib-rs"
+    ground_truth:
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.type_", lines: [970, 977]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.type_do", lines: [979, 1042]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.stored", lines: [1044, 1069]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.copy_block", lines: [1071, 1094]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.len_", lines: [1096, 1099]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.len", lines: [1101, 1168]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.lit", lines: [906, 918]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.len_ext", lines: [1170, 1186]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.dist", lines: [1188, 1231]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.dist_ext", lines: [1233, 1252]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.match_", lines: [1255, 1316]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.table", lines: [1320, 1338]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.len_lens", lines: [1342, 1380]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.State.code_lens", lines: [1384, 1512]}
+      - {file: "zlib-rs/src/inflate.rs", function: "crate.inflate.inflate_fast_help", lines: [1575, 1776]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [unbounded-recursion]
+    expected_reason: "mutual recursion with no depth parameter/check among State mode methods reachable from pub inflate() via dispatch(): type_ -> type_do -> stored -> copy_block -> type_, and len -> lit -> len"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: the fix rewrites all 31 inflate state methods into one loop (automatically flagged as a large refactor); narrowed by hand to the 15 functions that sit on a call cycle (type_ -> type_do -> stored -> copy_block -> type_; len -> lit -> len; ...). The gzip-header chain, dict, check, length, sync, mem and dispatch are acyclic and were dropped. Not part of the sample; reviewed because it was auto-excluded", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0399
+    class: P
+    repo: https://github.com/rustls/rustls
+    vuln_rev: "4ef3532cf2fceda9fdd19947f871adf7020d0b49"
+    fixed_rev: "69b6f7473a7ae096a9cf9e2d6eb3cd8b22743597"
+    member: "rustls"
+    ground_truth:
+      - {file: "rustls/src/conn.rs", function: "crate.conn.ConnectionCommon.first_handshake_message", lines: [656, 677]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "stale deframer cursor in first_handshake_message (state logic); the panic surfaces several calls deeper in the handshake deframer and the exact site (a slice bounds check or an unwrap) could not be pinned from the advisory and diff"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0377
+    class: U
+    repo: https://github.com/databento/dbn
+    vuln_rev: "99222f1a9e49b70c045c397d00a79db93ed51fe2"
+    fixed_rev: "339efb90fdb980920a5e8829008abc1114f4bfdd"
+    member: "rust/dbn"
+    ground_truth:
+      - {file: "rust/dbn/src/record/conv.rs", function: "crate.record.conv.c_chars_to_str", lines: [128, 132]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "out-of-bounds read by strlen via `CStr::from_ptr` in an unsafe block; CStr::from_ptr is not a U3-listed operation (near miss) and no T5 sink is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0376
+    class: P
+    repo: https://github.com/hyperium/tonic
+    vuln_rev: "5be40f14d404624301ad9263b06e073f612e499c"
+    fixed_rev: "a4472a86f3290e60c7c01348b7e6a8164d6e7e48"
+    member: "tonic"
+    ground_truth:
+      - {file: "tonic/src/transport/server/incoming.rs", function: "crate.transport.server.incoming.handle_accept_error", lines: [90, 100]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "error-classification logic bug that terminates the accept loop; no panic, index, arithmetic, allocation or recursion pattern involved, nothing close"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0373
+    class: P
+    repo: https://github.com/quinn-rs/quinn
+    vuln_rev: "c292a3c6a60b9b67c82dfaf5b2dab212d8f4a530"
+    fixed_rev: "e01609ccd8738bd438d86fa7185a0f85598cb58f"
+    member: "quinn-proto"
+    ground_truth:
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.Endpoint.accept", lines: [554, 692]}
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.Endpoint.clean_up_incoming", lines: [804, 808]}
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.Endpoint.add_connection", lines: [810, 874]}
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.ConnectionIndex.insert_initial_incoming", lines: [1024, 1027]}
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.ConnectionIndex.remove_initial", lines: [1030, 1032]}
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.ConnectionIndex.insert_initial", lines: [1035, 1038]}
+      - {file: "quinn-proto/src/endpoint.rs", function: "crate.endpoint.ConnectionIndex.remove", lines: [1072, 1085]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "wrong map key on cleanup leaves a stale routing entry (logic bug); the later panic is an index into a slab::Slab in Endpoint::handle, outside the fixed functions and not a slice/Vec/str index"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0369
+    class: P
+    repo: https://github.com/whisperfish/rust-phonenumber
+    vuln_rev: "c0fdd69e9434b1bdab6a97dc64495034436a03aa"
+    fixed_rev: "b792151b17fc90231c232a23935830c2266f3203"
+    member: ""
+    ground_truth:
+      - {file: "src/national_number.rs", function: "crate.national_number.NationalNumber.new", lines: [25, 32]}
+      - {file: "src/parser/mod.rs", function: "crate.parser.parse_with", lines: [41, 94]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "panic comes from assert!, which P1 does not list (near miss); no unwrap/expect/panic! is involved and `1 << 56` is a literal shift, not P3"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0363
+    class: T
+    repo: https://github.com/launchbadge/sqlx
+    vuln_rev: "2a9b85889e2f4f63512f3ff6695526e3d1e5a326"
+    fixed_rev: "bf13a7706be2732f5fbfedce6c7064d91d4d3eaf"
+    member: ""
+    ground_truth:
+      - {file: "sqlx-postgres/src/types/hstore.rs", function: "sqlx_postgres.types.hstore.PgHstore.<Decode>.decode", lines: [142, 163]}
+      - {file: "sqlx-postgres/src/types/hstore.rs", function: "sqlx_postgres.types.hstore.PgHstore.<Encode>.encode_by_ref", lines: [167, 190]}
+      - {file: "sqlx-postgres/src/types/hstore.rs", function: "sqlx_postgres.types.hstore.read_length", lines: [193, 203]}
+      - {file: "sqlx-postgres/src/types/hstore.rs", function: "sqlx_postgres.types.hstore.read_value", lines: [205, 220]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "truncating `as i32` casts on length prefixes; `as` casts are explicitly not P3, and no SQL-string sink (T2) is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0362
+    class: P
+    repo: https://github.com/alloy-rs/core
+    vuln_rev: "6540523385ea10c9adce31beae7106cfa7da770f"
+    fixed_rev: "4790c47518024bd391bbd6815b00f501bad76a15"
+    member: "crates/json-abi"
+    ground_truth:
+      - {file: "crates/sol-type-parser/src/utils.rs", function: "crate.utils.list_parser", lines: [77, 104], outside_member: true}
+      - {file: "crates/sol-type-parser/src/utils.rs", function: "crate.utils.tuple_parser", lines: [60, 66], outside_member: true}
+      - {file: "crates/sol-type-parser/src/tuple.rs", function: "crate.tuple.TupleSpecifier.parse_types", lines: [66, 71], outside_member: true}
+      - {file: "crates/sol-type-parser/src/tuple.rs", function: "crate.tuple.TupleSpecifier.parser", lines: [59, 63], outside_member: true}
+      - {file: "crates/sol-type-parser/src/stem.rs", function: "crate.stem.TypeStem.parser", lines: [57, 64], outside_member: true}
+      - {file: "crates/sol-type-parser/src/type_spec.rs", function: "crate.type_spec.TypeSpecifier.parser", lines: [95, 114], outside_member: true}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [unbounded-recursion]
+    expected_reason: "mutual recursion TypeSpecifier::parser -> TypeStem::parser -> TupleSpecifier::parser -> parse_types -> tuple_parser/list_parser(TypeSpecifier::parser) on nested '(' with no depth check; the cycle closes through parser functions passed to winnow combinators"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: 42 functions in 11 files, almost all fallout of the mechanical &str -> Input signature change (automatically flagged as a large refactor); narrowed by hand to the six functions of the recursion cycle in crates/sol-type-parser, which is a sibling crate outside the alloy-json-abi member", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0357
+    class: U
+    repo: https://github.com/sfackler/rust-openssl
+    vuln_rev: "32f150b05a8996a14561741bceab66a95043cd57"
+    fixed_rev: "aef36e0f3950653148d6644309ee41ccf16e02bb"
+    member: "openssl"
+    ground_truth:
+      - {file: "openssl/src/bio.rs", function: "crate.bio.MemBio.get_buf", lines: [62, 68]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "slice::from_raw_parts inside the unsafe block of MemBio::get_buf is the operation the advisory blames (null data pointer)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0356
+    class: C
+    repo: https://github.com/matrix-org/matrix-rust-sdk
+    vuln_rev: "2aecf2950d64d9e12eeadb8f233dcc8ecf7a8933"
+    fixed_rev: "76a7052149bb8f722df12da915b3a06d19a6695a"
+    member: "crates/matrix-sdk-crypto"
+    ground_truth:
+      - {file: "crates/matrix-sdk-crypto/src/identities/user.rs", function: "crate.identities.user.UserIdentity.is_verified", lines: [229, 231]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing authorization/trust check in protocol logic (boolean condition); no rule covers it"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0350
+    class: T
+    repo: https://github.com/GitoxideLabs/gitoxide
+    vuln_rev: "3c2174101ed35dcb9bdb4585b3245507b15efe59"
+    fixed_rev: "79dce79c62f6072aa2653780d590dc3993dfa401"
+    member: "gix-fs"
+    ground_truth:
+      - {file: "gix-fs/src/stack.rs", function: "crate.stack.Stack.make_relative_path_current", lines: [61, 116]}
+      - {file: "gix-worktree/src/stack/delegate.rs", function: "crate.stack.delegate.StackDelegate.<Delegate>.push", lines: [101, 120], outside_member: true}
+      - {file: "gix-worktree/src/stack/delegate.rs", function: "crate.stack.delegate.create_leading_directory", lines: [142, 173], outside_member: true}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [path-traversal]
+    expected_reason: "Stack::make_relative_path_current pushes unvalidated components of the pub parameter `relative` onto the worktree root (PathBuf::push); the fs sinks it reaches are in gix-worktree and gix-worktree-state, outside the member (create_dir and OpenOptions::open, unlisted; remove_file / remove_dir_all, listed)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: 54 functions in 49 files, almost all signature and call-site adaptations from threading an entry mode through the workspace (automatically flagged as a large refactor); narrowed by hand to the unvalidated push in gix-fs and the gix-worktree delegate that creates directories from it (the latter two are outside the gix-fs member)", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0345
+    class: P
+    repo: https://gitlab.com/sequoia-pgp/sequoia
+    vuln_rev: "61207a1d03ee54faaff69fd59d29549af5d0a866"
+    fixed_rev: "81fa1d8440116712365106bca7bd81b46349d9c0"
+    member: "openpgp"
+    ground_truth:
+      - {file: "openpgp/src/cert/raw.rs", function: "crate.cert.raw.RawCertParser.<Iterator>.next", lines: [698, 1005]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "infinite loop because the input stream is not advanced on an unsupported primary key; infinite loops have no rule"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0343
+    class: C
+    repo: https://github.com/viz-rs/nano-id
+    vuln_rev: "9a5a094e121aab0d1f72549bc9d167aa1118b215"
+    fixed_rev: "a9022772b2f1ce38929b5b81eccc670ac9d3ab23"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", lines: [8, 24]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "wrong bit-mask arithmetic for non-power-of-two alphabets reduces ID entropy; the randomness source is getrandom, which C3 accepts, and no other C rule's API is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0341
+    class: P
+    repo: https://github.com/tmccombs/tls-listener
+    vuln_rev: "6c57dea2d9beb1577ae4d80f6eaf03aad4ef3857"
+    fixed_rev: "d5a7655d6ea9e53ab57c3013092c5576da964bc4"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.TlsListener.poll_accept", lines: [182, 206]}
+      - {file: "src/lib.rs", function: "crate.Builder.max_handshakes", lines: [328, 331]}
+      - {file: "src/lib.rs", function: "crate.Builder.listen", lines: [349, 360]}
+      - {file: "src/lib.rs", function: "crate.builder", lines: [382, 388]}
+      - {file: "src/lib.rs", lines: [42, 124]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "resource-exhaustion by a concurrency cap / design default (connection starvation); no listed panic, allocation or recursion pattern"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0336
+    class: P
+    repo: https://github.com/rustls/rustls
+    vuln_rev: "1f5146cdfa9198ba75534a86243d3c4e1a94ca61"
+    fixed_rev: "f45664fbded03d833dffd806503d3c8becd1b71e"
+    member: "rustls"
+    ground_truth:
+      - {file: "rustls/src/common_state.rs", function: "crate.common_state.CommonState.process_alert", lines: [424, 453]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "infinite loop / CPU exhaustion caused by a protocol state flag; no panic, allocation or recursion pattern, so no rule"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0335
+    class: T
+    repo: https://github.com/GitoxideLabs/gitoxide
+    vuln_rev: "54286091ebc6e13a8f27f730fa88127e6334cf13"
+    fixed_rev: "f56ad390a5569d0129b7b16632991d18b9ddb4f7"
+    member: "gix-transport"
+    ground_truth:
+      - {file: "gix-transport/src/client/blocking_io/ssh/program_kind.rs", function: "crate.client.blocking_io.ssh.program_kind.ProgramKind.prepare_invocation", lines: [23, 80]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [command-injection]
+    expected_reason: "ProgramKind::prepare_invocation passes the URL-derived `{user}@{host}` as an ssh argument without rejecting a leading '-'; the argument goes through gix_command::Prepare::arg, and the std::process::Command::args call itself is in the gix-command crate, outside the member"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0021
+    class: U
+    repo: https://github.com/eyre-rs/eyre
+    vuln_rev: "32d84dcbacf607d7c6e1050b54d585622c8de4fc"
+    fixed_rev: "770ac3fa1435eae3b166a4b072053360e38a0575"
+    member: "eyre"
+    ground_truth:
+      - {file: "eyre/src/error.rs", function: "crate.error.context_drop_rest", lines: [692, 711]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "context_drop_rest casts the erased pointer to the wrong ErrorImpl type and turns it into a Box that is dropped at once; the Box::from_raw is in the directly called helper OwnedPtr::into_box (eyre/src/ptr.rs), the wrong .cast::<..>() itself is not a U3 operation"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0012
+    class: P
+    repo: https://github.com/CosmWasm/serde-json-wasm
+    vuln_rev: "05c08e6750ae7826b17b90bc0c7f52635cd4770a"
+    fixed_rev: "e78f9e28b3a2151d3175ee88ab2a001bf9515429"
+    member: ""
+    ground_truth:
+      - {file: "src/de/mod.rs", function: "crate.de.Deserializer.<Deserializer>.deserialize_any", lines: [255, 307]}
+      - {file: "src/de/mod.rs", function: "crate.de.Deserializer.<Deserializer>.deserialize_seq", lines: [510, 525]}
+      - {file: "src/de/mod.rs", function: "crate.de.Deserializer.<Deserializer>.deserialize_map", lines: [546, 563]}
+      - {file: "src/de/mod.rs", function: "crate.de.Deserializer.<Deserializer>.deserialize_enum", lines: [577, 596]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [unbounded-recursion]
+    expected_reason: "deserialize_any/seq/map/enum recurse once per nested '[' or '{' with no depth limit; the cycle closes through serde's generic Visitor and DeserializeSeed callbacks, not through direct calls inside the crate"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: Error::fmt (message of the new error variant) and Deserializer::new (initialises the new depth field) are incidental; the recursion sites are the four deserialize_* methods", date: 2026-11-11}
+
+  - id: RUSTSEC-2024-0011
+    class: C
+    repo: https://github.com/mcginty/snow
+    vuln_rev: "02c26b7551cb7e221792a9d3d3a94730e6a34e8a"
+    fixed_rev: "12e8ae55547ae297d5f70599e5c884ea891303eb"
+    member: ""
+    ground_truth:
+      - {file: "src/cipherstate.rs", function: "crate.cipherstate.CipherState.decrypt_ad", lines: [47, 68]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "protocol state logic bug (nonce advanced on failed authentication); the `self.n += 1` is not an overflow and not on attacker-controlled data, so overflow-candidate does not apply"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0010
+    class: C
+    repo: https://github.com/svix/svix-webhooks
+    vuln_rev: "edd9399c3b4695794db83e1c851f5b5da3c83313"
+    fixed_rev: "958821bd3b956d1436af65f70a0964d4ffb7daf6"
+    member: "rust"
+    ground_truth:
+      - {file: "rust/src/webhooks.rs", function: "crate.webhooks.Webhook.verify", lines: [60, 96]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "signature-comparison logic flaw (zip truncation, missing length check); protocol/signature logic has no rule"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2024-0009
+    class: T
+    repo: https://github.com/trillium-rs/trillium
+    vuln_rev: "71ddfc5da3a05775a49c9d17708024022c070772"
+    fixed_rev: "8d468f85e27b8d0943d6f43ce9f8c7397141a999"
+    member: "http"
+    ground_truth:
+      - {file: "http/src/conn.rs", function: "crate.conn.Conn.write_headers", lines: [783, 814]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [header-injection]
+    expected_reason: "hand-written header serialization in Conn::write_headers: each header name/value from response_headers is written followed by a literal \\r\\n with no validation"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: 16 functions in 5 files, mostly a rename inside HeaderValue and constructor refactors (automatically flagged as a large refactor); narrowed by hand to Conn::write_headers, which serialises response headers verbatim. The same fix also touches trillium-client's Conn::build_head, which belongs to a different package and was left out. Not part of the sample; reviewed because it was auto-excluded", date: 2026-11-11}
+
+  - id: RUSTSEC-2023-0085
+    class: P
+    repo: https://github.com/sno2/hpack-rs-patched
+    vuln_rev: "e833ecac324fb9457e04737f482328c3b5cc93fa"
+    fixed_rev: "d669282924a95311599e9e7dd53869ee96b3a2f5"
+    member: ""
+    ground_truth:
+      - {file: "src/decoder.rs", function: "crate.decoder.Decoder.decode_with_cb", lines: [301, 370]}
+      - {file: "src/decoder.rs", function: "crate.decoder.Decoder.update_max_dynamic_size", lines: [452, 461]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [panic-reachable-from-entry]
+    expected_reason: "unwrap() on the decode_integer result in update_max_dynamic_size, reachable from pub Decoder::decode via decode_with_cb"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0082
+    class: P
+    repo: https://github.com/whisperfish/rust-phonenumber
+    vuln_rev: "6e1d06b1bd069678088bd15030becfa157c48fc0"
+    fixed_rev: "bea8e732b9cada617ede5cf51663dba183747f71"
+    member: ""
+    ground_truth:
+      - {file: "src/parser/rfc3966.rs", function: "crate.parser.rfc3966.phone_number", lines: [28, 59]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "index panic on an empty string, but the index is the literal `[0]` (and the slice `[1..]` has a literal bound); P2 is defined for non-literal indexes, so near miss; P1 does not apply (no unwrap/expect/panic! macro)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0080
+    class: U
+    repo: https://github.com/ejmahler/transpose
+    vuln_rev: "e70dd159f1881d86aa50ee01586d04e7a83d8dbe"
+    fixed_rev: "c4bcd39fabca9a31a401d0cc42d4090869b5a37a"
+    member: ""
+    ground_truth:
+      - {file: "src/in_place.rs", function: "crate.in_place.transpose_inplace", lines: [69, 137]}
+      - {file: "src/out_of_place.rs", function: "crate.out_of_place.transpose", lines: [230, 242]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [overflow-candidate, dangerous-unsafe-op, unsafe-length-from-input]
+    expected_reason: "input_width*input_height on the pub fn's parameters wraps in the size check of transpose (P3); the out-of-bounds write is get_unchecked_mut with an index computed from them in the direct callee transpose_small (U3, T5)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0077
+    class: P
+    repo: https://github.com/rosenpass/rosenpass
+    vuln_rev: "1223048b48fa43095be8245cd52b00274fb4b151"
+    fixed_rev: "93439858d1c44294a7b377f775c4fc897a370bb2"
+    member: "rosenpass"
+    ground_truth:
+      - {file: "rosenpass/src/protocol.rs", function: "crate.protocol.CryptoServer.initiate_handshake", lines: [738, 745]}
+      - {file: "rosenpass/src/protocol.rs", function: "crate.protocol.CryptoServer.handle_msg", lines: [783, 849]}
+      - {file: "rosenpass/src/lib.rs", lines: [22, 22]}
+      - {file: "rosenpass/src/msgs.rs", lines: [146, 216]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [unchecked-index]
+    expected_reason: "slice-range indexing with non-literal bounds on the unvalidated receive buffer in the macro-generated lense accessors (`&self.0[0 .. $offset]`, `&self.0[$offset .. $offset + $len]`), reached from handle_msg -> check_seal -> until_mac"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0074
+    class: U
+    repo: https://github.com/google/zerocopy
+    vuln_rev: "961612f110ca313eea06ca2563c88c83b51da492"
+    fixed_rev: "7d3a8f9ea6bcf982ecd77db39a8be410b098232e"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.Ref.into_ref", lines: [4646, 4654], advisory_path: "zerocopy::Ref::into_ref"}
+      - {file: "src/lib.rs", function: "crate.Ref.into_mut", lines: [4666, 4674], advisory_path: "zerocopy::Ref::into_mut"}
+      - {file: "src/lib.rs", function: "crate.Ref.into_slice", lines: [4686, 4694], advisory_path: "zerocopy::Ref::into_slice"}
+      - {file: "src/lib.rs", function: "crate.Ref.into_mut_slice", lines: [4707, 4716], advisory_path: "zerocopy::Ref::into_mut_slice"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "unsound lifetime extension (insufficient bound on B), for which there is no rule; near miss: into_slice/into_mut_slice go through helpers that call slice::from_raw_parts(_mut), but pointer and length are valid there, and into_ref/into_mut use a raw pointer deref, which U3 does not list"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0070
+    class: U
+    repo: https://github.com/Voultapher/self_cell
+    vuln_rev: "537891685c4199efbb2c6e6a512edfd1012ec06a"
+    fixed_rev: "2f3448127bb2058acaaaa90886613f2f99581257"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", lines: [580, 580]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "insufficient compile-time variance check in a macro_rules-generated function (type-system soundness hole); the unsafe block only calls the crate's own borrow_dependent, no U3 operation is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0068
+    class: C
+    repo: https://github.com/fadeevab/cocoon
+    vuln_rev: "680b68c2126f7bc7e05e2b3968fcb0a5bd202976"
+    fixed_rev: "1b6392173ce35db4736a94b62b2d2973f9a71441"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.Cocoon.encrypt", lines: [717, 762], advisory_path: "cocoon::Cocoon::encrypt"}
+      - {file: "src/lib.rs", function: "crate.Cocoon.dump", lines: [683, 690], advisory_path: "cocoon::Cocoon::dump"}
+      - {file: "src/lib.rs", function: "crate.Cocoon.wrap", lines: [639, 655], advisory_path: "cocoon::Cocoon::wrap"}
+      - {file: "src/mini.rs", function: "crate.mini.MiniCocoon.encrypt", lines: [264, 290], advisory_path: "cocoon::MiniCocoon::encrypt"}
+      - {file: "src/mini.rs", function: "crate.mini.MiniCocoon.dump", lines: [233, 240], advisory_path: "cocoon::MiniCocoon::dump"}
+      - {file: "src/mini.rs", function: "crate.mini.MiniCocoon.wrap", lines: [184, 200], advisory_path: "cocoon::MiniCocoon::wrap"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "nonce reuse because the RNG is cloned before use (`self.rng.clone()`); near misses: C3 needs StdRng::from_seed with a constant (here the seed is caller-supplied) and C6 needs a constant nonce reaching Nonce::from_slice (here the nonce is RNG output passed to GenericArray::from_slice)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0066
+    class: T
+    repo: https://gitlab.com/edneville/please
+    vuln_rev: "f3598f8fae5455a8ecf22afca19eaba7be5053c9"
+    fixed_rev: "831afb03ef4e579d8ceee9d7eb975735c1effbfb"
+    member: ""
+    ground_truth:
+      - {file: "src/bin/please.rs", function: "crate.bin.please.general_options", lines: [98, 186]}
+      - {file: "src/bin/please.rs", function: "crate.bin.please.main", lines: [211, 356]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing pty isolation (terminal ioctl injection); near miss: argv reaches std::process::Command::new/.args in main, the command-injection sink, but running the user-supplied command is the tool's purpose and is unchanged by the fix, so it is not the mechanism"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0062
+    class: P
+    repo: https://github.com/NLnetLabs/bcder
+    vuln_rev: "057f880afb7a275676d6f4ccf1fcd812500308d6"
+    fixed_rev: "4da91c3fd853e3d466d8581cf1d82b7f3255de56"
+    member: ""
+    ground_truth:
+      - {file: "src/decode/content.rs", function: "crate.decode.content.Constructed.process_next_value", lines: [615, 708]}
+      - {file: "src/decode/content.rs", function: "crate.decode.content.Constructed.skip_opt", lines: [1051, 1184]}
+      - {file: "src/oid.rs", function: "crate.oid.Oid.take_from", lines: [85, 91]}
+      - {file: "src/oid.rs", function: "crate.oid.Oid.take_opt_from", lines: [98, 104]}
+      - {file: "src/oid.rs", function: "crate.oid.Oid.skip_if", lines: [109, 123]}
+      - {file: "src/oid.rs", function: "crate.oid.Oid.<Display>.fmt", lines: [173, 190]}
+      - {file: "src/string/bit.rs", function: "crate.string.bit.BitString.from_content", lines: [144, 172]}
+      - {file: "src/string/octet.rs", function: "crate.string.octet.OctetStringOctets.<Iterator>.next", lines: [684, 695]}
+      - {file: "src/tag.rs", function: "crate.tag.Tag.take_from_if", lines: [412, 450]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [unchecked-index, panic-reachable-from-entry]
+    expected_reason: "several independent decoder panics: unchecked `source.slice()[i]` in Tag::take_from_if and `content.slice()[..len]` in Oid::skip_if (P2), `components.next().unwrap().to_u32().unwrap()` in Oid's Display (P1); the other sub-fixes panic through assert! or a literal index, which no rule lists"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: a set of localised fixes, not a refactor; Oid::skip_in and skip_opt_in, BitString::new and skip_content, RestrictedString::partial_cmp and the file-level src/int.rs entry are strictness or consistency changes that could not panic; kept the nine functions with a panic path", date: 2026-11-11}
+
+  - id: RUSTSEC-2023-0044
+    class: U
+    repo: https://github.com/sfackler/rust-openssl
+    vuln_rev: "8e16a8b6e28e32cedaa9eed814ba994a8c89b5e4"
+    fixed_rev: "f03a2dc8074ff87bf8502194d955f6d60c8fff65"
+    member: "openssl"
+    ground_truth:
+      - {file: "openssl/src/x509/verify.rs", function: "crate.x509.verify.X509VerifyParamRef.set_host", lines: [121, 130]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "over-read happens inside the C library after an FFI call with a pointer/length pair; FFI calls are not a U3 operation and no listed operation is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0039
+    class: P
+    repo: https://gitlab.com/sequoia-pgp/sequoia
+    vuln_rev: "e369609d6b1225400bc116656195c77fc684438e"
+    fixed_rev: "f6307652fb2cbf4e0fbd3f897b1ec70863fcfa61"
+    member: "buffered-reader"
+    ground_truth:
+      - {file: "buffered-reader/src/generic.rs", function: "crate.generic.Generic.data_helper", lines: [114, 242]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "error-stash logic bug in data_helper; the panic itself happens in a caller (the packet parser in openpgp/src/parse.rs), not in data_helper or anything it calls, and the slice expressions inside data_helper are not what fails"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2023-0030
+    class: U
+    repo: https://github.com/firecracker-microvm/versionize
+    vuln_rev: "732eb8177925113639af989bac78c2a5395ebacf"
+    fixed_rev: "3385d797c5e5f547562d8d83fb49de69f917e1f2"
+    member: ""
+    ground_truth:
+      - {file: "src/primitives.rs", function: "crate.primitives.FamStructWrapper.<Versionize>.deserialize", lines: [362, 379]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing consistency check between a deserialized length field and the actual entry count; the blamed function contains no unsafe block and no U3/T5 operation (the out-of-bounds access happens later inside vmm-sys-util)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct", date: 2026-11-11}
+
+  - id: RUSTSEC-2023-0024
+    class: P
+    repo: https://github.com/sfackler/rust-openssl
+    vuln_rev: "332311b597cc444a10d4acaf122ee58bd1bc8ff8"
+    fixed_rev: "78aa9aa22cfd58ac33d1e19184cec667438fd2a1"
+    member: "openssl"
+    ground_truth:
+      - {file: "openssl/src/x509/mod.rs", function: "crate.x509.X509Extension.new", lines: [811, 828]}
+      - {file: "openssl/src/x509/mod.rs", function: "crate.x509.X509Extension.new_nid", lines: [837, 853]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "null pointer handed to an FFI call, crash happens inside OpenSSL; no U3 operation involved (FFI calls are not listed) and the crash is not a Rust unwrap/expect panic"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0102
+    class: U
+    repo: https://github.com/bytecodealliance/wasmtime
+    vuln_rev: "2614f2e9d2d36805ead8a8da0fa0c6e0d9e428a0"
+    fixed_rev: "e60c3742904ccbb3e26da201c9221c38a4981d72"
+    member: "crates/wasmtime"
+    ground_truth:
+      - {file: "crates/runtime/src/instance/allocator/pooling.rs", function: "crate.instance.allocator.pooling.InstancePool.allocate_memories", lines: [368, 439], outside_member: true}
+      - {file: "crates/runtime/src/instance/allocator/pooling.rs", function: "crate.instance.allocator.pooling.MemoryPool.new", lines: [664, 751], outside_member: true}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "reservation-size logic error (zero bytes reserved per slot when memory_pages = 0) whose out-of-bounds access happens in generated machine code; the slice::from_raw_parts_mut in allocate_memories is not the mechanism"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0101
+    class: P
+    repo: https://github.com/bytecodealliance/wasmtime
+    vuln_rev: "2154c63de94e0372bca5a596c3eaf90147c922d1"
+    fixed_rev: "2ba4bce5cc719e5a74e571a534424614e62ecc41"
+    member: "crates/wasmtime"
+    ground_truth:
+      - {file: "cranelift/codegen/src/isa/aarch64/lower/isle.rs", function: "crate.isa.aarch64.lower.isle.IsleContext.<Context>.move_wide_const_from_u64", lines: [78, 80], outside_member: true}
+      - {file: "cranelift/codegen/src/isa/aarch64/lower/isle.rs", function: "crate.isa.aarch64.lower.isle.IsleContext.<Context>.move_wide_const_from_negated_u64", lines: [82, 84], outside_member: true}
+      - {file: "cranelift/codegen/src/isa/aarch64/lower/isle.rs", function: "crate.isa.aarch64.lower.isle.IsleContext.<Context>.imm_logic_from_u64", lines: [86, 89], outside_member: true}
+      - {file: "cranelift/codegen/src/isa/aarch64/lower/isle.rs", function: "crate.isa.aarch64.lower.isle.IsleContext.<Context>.imm_logic_from_imm64", lines: [91, 93], outside_member: true}
+      - {file: "cranelift/codegen/src/isa/aarch64/lower/isle.rs", function: "crate.isa.aarch64.lower.isle.IsleContext.<Context>.load_constant64_full", lines: [139, 208], outside_member: true}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "miscompilation caused by instruction-selection logic (mostly in ISLE rule files); no unsafe operation, panic, allocation, taint sink or crypto API is the mechanism"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0098
+    class: U
+    repo: https://github.com/bytecodealliance/wasmtime
+    vuln_rev: "96ae44ac8f1b4bad04df5c77c4dcb248cfdec670"
+    fixed_rev: "2614f2e9d2d36805ead8a8da0fa0c6e0d9e428a0"
+    member: "crates/wasmtime"
+    ground_truth:
+      - {file: "crates/runtime/src/instance/allocator/pooling.rs", function: "crate.instance.allocator.pooling.InstancePool.allocate_memories", lines: [368, 438], outside_member: true}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing reset of a reused pooled memory slot (resource-lifecycle logic bug); no listed unsafe operation, panic or sink is the mechanism"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0093
+    class: C
+    repo: https://github.com/dalek-cryptography/ed25519-dalek
+    vuln_rev: "ad461f4f0f56507a2945510dedb914b3d3547c40"
+    fixed_rev: "9638ab40a51eb203fb93f4b3e630474953602995"
+    member: ""
+    ground_truth:
+      - {file: "src/keypair.rs", lines: [36, 41], item: "pub struct Keypair with pub fields secret and public"}
+      - {file: "src/keypair.rs", function: "crate.keypair.Keypair.from_bytes", lines: [80, 91]}
+      - {file: "src/secret.rs", function: "crate.secret.ExpandedSecretKey.sign", lines: [399, 421]}
+      - {file: "src/secret.rs", function: "crate.secret.ExpandedSecretKey.sign_prehashed", lines: [444, 507]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: []
+    expected_reason: "API-design / signature-protocol flaw (mismatched public key accepted as signing input); no C-rule API involved (Sha512 here is the Ed25519 hash, not a weak digest)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: of 12 functions and two file-level spans, InternalError::fmt, Keypair::{generate, verify, verify_prehashed, verify_strict, sign_prehashed} and ExpandedSecretKey::{from_bytes, serialize, deserialize} are formatting, visibility or removal fallout of the API redesign; kept the items that accept a mismatched public key. The flaw is an API property, so this narrowing is a judgment call", date: 2026-11-11}
+
+  - id: RUSTSEC-2022-0091
+    class: T
+    repo: https://github.com/108518/tauri
+    vuln_rev: "f756cd5e7ecc86f178f8d602eded1e1b6ecb51f3"
+    fixed_rev: "4cbdf0fb1c0de5004eab51c36d5843a9816f18af"
+    member: "core/tauri"
+    ground_truth:
+      - {file: "core/tauri/src/scope/fs.rs", function: "crate.scope.fs.push_pattern", lines: [67, 79]}
+      - {file: "core/tauri/src/scope/fs.rs", function: "crate.scope.fs.Scope.allow_directory", lines: [141, 153]}
+      - {file: "core/tauri/src/scope/fs.rs", function: "crate.scope.fs.Scope.allow_file", lines: [158, 163]}
+      - {file: "core/tauri/src/scope/fs.rs", function: "crate.scope.fs.Scope.forbid_directory", lines: [168, 180]}
+      - {file: "core/tauri/src/scope/fs.rs", function: "crate.scope.fs.Scope.forbid_file", lines: [185, 190]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing glob-metacharacter escaping in an access-control pattern list (authorization logic); no listed sink: Pattern::new is not a filesystem sink and `path.join(\"**\")` feeds a glob pattern, not an fs call"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: Scope.for_fs_api is a call-site adaptation (config-defined scopes keep Pattern::new); the unescaped glob patterns are built in push_pattern and its four allow/forbid callers", date: 2026-11-11}
+
+  - id: RUSTSEC-2022-0072
+    class: T
+    repo: https://github.com/stephank/hyper-staticfile
+    vuln_rev: "2ff8d89e6d30dfbc753cd681e67013ea2daa3a8e"
+    fixed_rev: "f12cadc6666c6f555d29725f5bc45da2103f24ea"
+    member: ""
+    ground_truth:
+      - {file: "src/resolve.rs", function: "crate.resolve.Resolver.resolve_path", lines: [147, 194]}
+      - {file: "src/response_builder.rs", function: "crate.response_builder.ResponseBuilder.build", lines: [80, 109]}
+      - {file: "src/resolve.rs", lines: [81, 81]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [open-redirect]
+    expected_reason: "Location header built directly from the request path (`self.path`) in ResponseBuilder::build"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0068
+    class: U
+    repo: https://github.com/capnproto/capnproto-rust
+    vuln_rev: "89f9e527cd5ac0e1d5e6929247fef08e8eb5203d"
+    fixed_rev: "e7ee0ef892c354b0390ed6e38d3ca634308897c5"
+    member: "capnp"
+    ground_truth:
+      - {file: "capnp/src/private/layout.rs", function: "crate.private.layout.wire_helpers.read_list_pointer", lines: [2438, 2619]}
+      - {file: "capnp/src/private/layout.rs", function: "crate.private.layout.ListReader.get_pointer_element", lines: [3809, 3818]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [overflow-candidate]
+    expected_reason: "ptr.offset(data_size * BYTES_PER_WORD) in the unsafe fn read_list_pointer, data_size read from the message: arithmetic feeding a pointer operation inside unsafe (P3's second clause); nothing wraps, the adjusted pointer just leaves the checked bounds"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0066
+    class: P
+    repo: https://github.com/conduit-rust/conduit-hyper
+    vuln_rev: "5f0553d2a6a615818536953cc6ba906fb3dfce5e"
+    fixed_rev: "4d225a53206505d39438ec6694e15f49c038baff"
+    member: ""
+    ground_truth:
+      - {file: "src/service/blocking_handler.rs", function: "crate.service.blocking_handler.BlockingHandler.blocking_handler", lines: [26, 47]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "unbounded allocation happens inside hyper::body::to_bytes, which is not one of the P4 calls (with_capacity / vec![_; n] / reserve / read_to_end); near miss for P4"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct", date: 2026-11-11}
+
+  - id: RUSTSEC-2022-0063
+    class: U
+    repo: https://github.com/rust-osdev/linked-list-allocator
+    vuln_rev: "cabe48095520331af28129b805f93acdcd4de955"
+    fixed_rev: "013b0758643943e8df5b17bbb495460ff47e8bbf"
+    member: ""
+    ground_truth:
+      - {file: "src/hole.rs", function: "crate.hole.HoleList.new", lines: [330, 348]}
+      - {file: "src/lib.rs", function: "crate.Heap.new", lines: [117, 126]}
+      - {file: "src/lib.rs", function: "crate.Heap.extend", lines: [206, 212]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [dangerous-unsafe-op, unsafe-length-from-input]
+    expected_reason: "U3: raw-pointer `ptr.write(Hole {..})` in `pub unsafe fn HoleList::new` with no minimum-size check is the out-of-bounds metadata write; T5: the pub parameter `by` goes unchecked into `Layout::from_size_align(by, 1)` in Heap::extend and on to the hole write"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: HoleList::empty (new field), Cursor::try_insert_after (assert text), Heap::size and Heap::top (adaptations) are incidental; the advisory's functions are the heap initialisation (HoleList::new, Heap::new) and Heap::extend", date: 2026-11-11}
+
+  - id: RUSTSEC-2022-0038
+    class: P
+    repo: https://github.com/graphql-rust/juniper
+    vuln_rev: "6d6c71fc3b4ea28f83842b37f5154727cc641b7c"
+    fixed_rev: "2b609ee057be950e3454b69fadc431d120e407bb"
+    member: "juniper"
+    ground_truth:
+      - {file: "juniper/src/validation/rules/no_fragment_cycles.rs", function: "crate.validation.rules.no_fragment_cycles.NoFragmentCycles.<Visitor>.exit_document", lines: [35, 53]}
+      - {file: "juniper/src/validation/rules/no_fragment_cycles.rs", function: "crate.validation.rules.no_fragment_cycles.CycleDetector.detect_from", lines: [95, 125]}
+      - {file: "juniper/src/validation/rules/no_undefined_variables.rs", function: "crate.validation.rules.no_undefined_variables.NoUndefinedVariables.find_undef_vars", lines: [32, 58]}
+      - {file: "juniper/src/validation/rules/no_unused_fragments.rs", function: "crate.validation.rules.no_unused_fragments.NoUnusedFragments.find_reachable_fragments", lines: [31, 45]}
+      - {file: "juniper/src/validation/rules/no_unused_variables.rs", function: "crate.validation.rules.no_unused_variables.NoUnusedVariables.find_used_vars", lines: [32, 58]}
+      - {file: "juniper/src/validation/rules/overlapping_fields_can_be_merged.rs", function: "crate.validation.rules.overlapping_fields_can_be_merged.OverlappingFieldsCanBeMerged.collect_conflicts_between_fields_and_fragment", lines: [267, 301]}
+      - {file: "juniper/src/validation/rules/variables_in_allowed_position.rs", function: "crate.validation.rules.variables_in_allowed_position.VariableInAllowedPosition.collect_incorrect_usages", lines: [38, 82]}
+      - {file: "juniper/src/validation/rules/no_fragment_cycles.rs", lines: [10, 21]}
+      - {file: "juniper/src/validation/rules/no_undefined_variables.rs", lines: [15, 20]}
+      - {file: "juniper/src/validation/rules/no_unused_fragments.rs", lines: [16, 20]}
+      - {file: "juniper/src/validation/rules/no_unused_variables.rs", lines: [15, 20]}
+      - {file: "juniper/src/validation/rules/variables_in_allowed_position.rs", lines: [20, 26]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [unbounded-recursion]
+    expected_reason: "direct self-recursion on fragment nesting in six validation helpers (detect_from, find_undef_vars, find_reachable_fragments, find_used_vars, ...), bounded only by visited sets, with no depth parameter or limit"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0028
+    class: U
+    repo: https://github.com/neon-bindings/neon
+    vuln_rev: "779f733d2a98d343a125510208a96b98efa630ee"
+    fixed_rev: "4e350ea1d74cc90158e7bc3b8ce273bf9b6a5c0f"
+    member: ""
+    ground_truth:
+      - {file: "src/types/buffer/types.rs", function: "crate.types.buffer.types.JsArrayBuffer.external", lines: [151, 160], advisory_path: "neon::types::JsArrayBuffer::external"}
+      - {file: "src/types/buffer/types.rs", function: "crate.types.buffer.types.JsBuffer.external", lines: [43, 52], advisory_path: "neon::types::JsBuffer::external"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing `'static` lifetime bound on a generic parameter passed to FFI; no U3 operation involved (the unsafe block only makes an FFI call)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0013
+    class: P
+    repo: https://github.com/rust-lang/regex
+    vuln_rev: "b92ffd5471018419ec48dbdef32757424439f065"
+    fixed_rev: "ae70b41d4f46641dbc45c7a4f87954aea356283e"
+    member: ""
+    ground_truth:
+      - {file: "src/compile.rs", function: "crate.compile.Compiler.c", lines: [257, 379]}
+      - {file: "src/compile.rs", function: "crate.compile.Compiler.c_concat", lines: [492, 514]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "CPU exhaustion from a missing complexity accounting; no allocation call with an input-derived size, no panic, and the compiler's recursion is not what the advisory blames (it is time, not stack)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0012
+    class: U
+    repo: https://github.com/jorgecarleitao/arrow2
+    vuln_rev: "66616ddda06b27cc96e07d43aadafe990387c927"
+    fixed_rev: "9d4342c5ff2ff1593232373a9998c3da18c7854d"
+    member: ""
+    ground_truth:
+      - {file: "src/ffi/generated.rs", lines: [5, 36]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "`#[derive(Clone)]` on a type with a releasing Drop impl (type-definition bug); no U3 operation is the mechanism"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0003
+    class: T
+    repo: https://github.com/rust-ammonia/ammonia
+    vuln_rev: "9d62f276b7ff377913c3a8f6845b6024805d1add"
+    fixed_rev: "b2b4346a2f16f34bc3d5c6e4f202e3471464fee2"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.clean_text", lines: [122, 158]}
+      - {file: "src/lib.rs", function: "crate.Builder.adjust_node_attributes", lines: [2026, 2150]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "HTML-escaping table error (wrong character mapped) in sanitizer logic; no T/C sink involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2022-0002
+    class: U
+    repo: https://github.com/xacrimon/dashmap
+    vuln_rev: "f4daed99a1d19e036db06a82aaf222fbd4d64953"
+    fixed_rev: "afe293f425a756de816d9e6142276441cfd7e84a"
+    member: ""
+    ground_truth:
+      - {file: "src/mapref/multiple.rs", function: "crate.mapref.multiple.RefMulti.key", lines: [36, 38], advisory_path: "dashmap::mapref::multiple::RefMulti::key"}
+      - {file: "src/mapref/multiple.rs", function: "crate.mapref.multiple.RefMulti.value", lines: [40, 42], advisory_path: "dashmap::mapref::multiple::RefMulti::value"}
+      - {file: "src/mapref/multiple.rs", function: "crate.mapref.multiple.RefMulti.pair", lines: [44, 46], advisory_path: "dashmap::mapref::multiple::RefMulti::pair"}
+      - {file: "src/mapref/multiple.rs", function: "crate.mapref.multiple.RefMutMulti.key", lines: [85, 87], advisory_path: "dashmap::mapref::multiple::RefMutMulti::key"}
+      - {file: "src/mapref/multiple.rs", function: "crate.mapref.multiple.RefMutMulti.pair", lines: [97, 99], advisory_path: "dashmap::mapref::multiple::RefMutMulti::pair"}
+      - {file: "src/mapref/multiple.rs", function: "crate.mapref.multiple.RefMutMulti.pair_mut", lines: [101, 103], advisory_path: "dashmap::mapref::multiple::RefMutMulti::pair_mut"}
+      - {file: "src/mapref/one.rs", function: "crate.mapref.one.Ref.key", lines: [30, 32], advisory_path: "dashmap::mapref::one::Ref::key"}
+      - {file: "src/mapref/one.rs", function: "crate.mapref.one.Ref.value", lines: [34, 36], advisory_path: "dashmap::mapref::one::Ref::value"}
+      - {file: "src/mapref/one.rs", function: "crate.mapref.one.Ref.pair", lines: [38, 40], advisory_path: "dashmap::mapref::one::Ref::pair"}
+      - {file: "src/mapref/one.rs", function: "crate.mapref.one.RefMut.key", lines: [75, 77], advisory_path: "dashmap::mapref::one::RefMut::key"}
+      - {file: "src/mapref/one.rs", function: "crate.mapref.one.RefMut.pair", lines: [87, 89], advisory_path: "dashmap::mapref::one::RefMut::pair"}
+      - {file: "src/mapref/one.rs", function: "crate.mapref.one.RefMut.pair_mut", lines: [91, 93], advisory_path: "dashmap::mapref::one::RefMut::pair_mut"}
+      - {file: "src/setref/multiple.rs", function: "crate.setref.multiple.RefMulti.key", lines: [14, 16], advisory_path: "dashmap::setref::multiple::RefMulti::key"}
+      - {file: "src/setref/one.rs", function: "crate.setref.one.Ref.key", lines: [18, 20], advisory_path: "dashmap::setref::one::Ref::key"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "over-long lifetime in safe accessor signatures (`-> &'a K`) backed by lifetime-extended references; no U3 operation involved (the extension is util::change_lifetime_const, a raw-pointer cast and deref, not mem::transmute), and the unsafe impl Send/Sync on these types are not the bug"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0143
+    class: P
+    repo: https://github.com/kamadak/exif-rs
+    vuln_rev: "f57a972e2d76d7d039f93c6b6f814ec62b4858c9"
+    fixed_rev: "1b05eab57e484cd7d576d4357b9cda7fdc57df8c"
+    member: ""
+    ground_truth:
+      - {file: "src/util.rs", function: "crate.util.T.<BufReadExt>.discard_exact", lines: [56, 67]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "infinite loop on EOF (CPU exhaustion); no rule covers non-terminating loops"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0130
+    class: U
+    repo: https://github.com/jeromefroe/lru-rs
+    vuln_rev: "09f68c63755b35f9cf5cb5d6765cf8dc080f9ea3"
+    fixed_rev: "3c6fdf07a4ab58f6a30bfdc68342fb6aa6428f48"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.LruCache.iter", lines: [703, 710], advisory_path: "lru::LruCache::iter"}
+      - {file: "src/lib.rs", function: "crate.LruCache.iter_mut", lines: [738, 745], advisory_path: "lru::LruCache::iter_mut"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing lifetime bound on the returned iterator (no rule); near miss: the functions contain raw pointer derefs `(*self.head).next`, which U3 does not list"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0128
+    class: U
+    repo: https://github.com/rusqlite/rusqlite
+    vuln_rev: "d70fbac2314333ecf2e67db43dbb43b0a47a4797"
+    fixed_rev: "934e0c709e156753881da98b32e9853f9ffe4a1b"
+    member: ""
+    ground_truth:
+      - {file: "src/functions.rs", function: "crate.functions.Connection.create_scalar_function", lines: [383, 397], advisory_path: "rusqlite::Connection::create_scalar_function"}
+      - {file: "src/functions.rs", function: "crate.functions.Connection.create_aggregate_function", lines: [406, 421], advisory_path: "rusqlite::Connection::create_aggregate_function"}
+      - {file: "src/functions.rs", function: "crate.functions.Connection.create_window_function", lines: [431, 446], advisory_path: "rusqlite::Connection::create_window_function"}
+      - {file: "src/collation.rs", function: "crate.collation.Connection.create_collation", lines: [19, 26], advisory_path: "rusqlite::Connection::create_collation"}
+      - {file: "src/hooks.rs", function: "crate.hooks.Connection.commit_hook", lines: [348, 353], advisory_path: "rusqlite::Connection::commit_hook"}
+      - {file: "src/hooks.rs", function: "crate.hooks.Connection.rollback_hook", lines: [360, 365], advisory_path: "rusqlite::Connection::rollback_hook"}
+      - {file: "src/hooks.rs", function: "crate.hooks.Connection.update_hook", lines: [378, 383], advisory_path: "rusqlite::Connection::update_hook"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "too-relaxed lifetime bound on registered closures (missing lifetime bounds: no rule); the Box::into_raw/FFI registration is not a U3 operation"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0125
+    class: P
+    repo: https://github.com/acw/simple_asn1
+    vuln_rev: "bc156c36d76d91b77cdf8f1f231e2c554ea0e454"
+    fixed_rev: "61533920f628cec31ab4151ef0836d7b244f7b62"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.from_der_", lines: [349, 595]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "str slice panic on a char boundary, but the range `[0..2]` has literal bounds; P2 is defined for non-literal indexes/bounds, so near miss; not P1 (no unwrap/expect/panic! involved)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: from_der_ is the function the advisory names, though it is 247 lines long", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0124
+    class: U
+    repo: https://github.com/tokio-rs/tokio
+    vuln_rev: "79d7a625d06512e85a89e667288e403607fe466f"
+    fixed_rev: "4b78ed4d68107be1d4c723cd55bec8eecfdc540a"
+    member: "tokio"
+    ground_truth:
+      - {file: "tokio/src/sync/oneshot.rs", function: "crate.sync.oneshot.Receiver.close", lines: [769, 773], advisory_path: "tokio::sync::oneshot::Receiver::close"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "atomic state-machine race on an UnsafeCell; no U3 operation involved (the cell is accessed by raw-pointer deref/assignment, which is not listed) and `unsafe impl Send/Sync for Inner<T>` has correct bounds and is not the bug"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0122
+    class: U
+    repo: https://github.com/google/flatbuffers
+    vuln_rev: "dadbff5714689091090a48becdf23fd2c699c82a"
+    fixed_rev: "374f8fb5fbd698c2e5719076c82224fe06542d18"
+    member: "rust/flatbuffers"
+    ground_truth:
+      - {file: "rust/flatbuffers/src/array.rs", function: "crate.array.Array.new", lines: [41, 48]}
+      - {file: "rust/flatbuffers/src/array.rs", function: "crate.array.Array.get", lines: [61, 65]}
+      - {file: "rust/flatbuffers/src/array.rs", function: "crate.array.Array.iter", lines: [68, 70]}
+      - {file: "rust/flatbuffers/src/array.rs", function: "crate.array.Array.<Into>.into", lines: [75, 77]}
+      - {file: "rust/flatbuffers/src/array.rs", function: "crate.array.Array.<Follow>.follow", lines: [86, 88]}
+      - {file: "rust/flatbuffers/src/array.rs", function: "crate.array.emplace_scalar_array", lines: [91, 108]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.push", lines: [150, 159]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.create_vector_direct", lines: [319, 337]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.create_vector_of_strings", lines: [344, 363]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.create_vector", lines: [370, 380]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.create_vector_from_iter", lines: [387, 398]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.required", lines: [439, 449]}
+      - {file: "rust/flatbuffers/src/builder.rs", function: "crate.builder.FlatBufferBuilder.write_vtable", lines: [489, 596]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.EndianScalar.to_little_endian", lines: [31, 31]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.EndianScalar.from_little_endian", lines: [32, 32]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.<impl>.<EndianScalar>.to_little_endian", lines: [85, 94]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.<impl>.<EndianScalar>.from_little_endian", lines: [97, 106]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.<impl>.<EndianScalar>.to_little_endian~2", lines: [112, 121]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.<impl>.<EndianScalar>.from_little_endian~2", lines: [124, 133]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.byte_swap_f32", lines: [139, 141]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.byte_swap_f64", lines: [146, 148]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.emplace_scalar", lines: [156, 163]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", function: "crate.endian_scalar.read_scalar", lines: [179, 184]}
+      - {file: "rust/flatbuffers/src/follow.rs", function: "crate.follow.Follow.follow", lines: [32, 32]}
+      - {file: "rust/flatbuffers/src/follow.rs", function: "crate.follow.FollowStart.new", lines: [41, 43]}
+      - {file: "rust/flatbuffers/src/follow.rs", function: "crate.follow.FollowStart.self_follow", lines: [45, 47]}
+      - {file: "rust/flatbuffers/src/follow.rs", function: "crate.follow.FollowStart.<Follow>.follow", lines: [52, 54]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.WIPOffset.new", lines: [114, 119]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.WIPOffset.<Push>.push", lines: [138, 143]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.ForwardsUOffset.<Push>.push", lines: [150, 152]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.ForwardsUOffset.<Follow>.follow", lines: [182, 186]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.ForwardsVOffset.<Follow>.follow", lines: [203, 207]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.ForwardsVOffset.<Push>.push", lines: [214, 216]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.BackwardsSOffset.<Follow>.follow", lines: [233, 237]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.BackwardsSOffset.<Push>.push", lines: [244, 246]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.SkipSizePrefix.<Follow>.follow", lines: [255, 257]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.SkipRootOffset.<Follow>.follow", lines: [266, 268]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.FileIdentifier.<Follow>.follow", lines: [277, 279]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.SkipFileIdentifier.<Follow>.follow", lines: [289, 291]}
+      - {file: "rust/flatbuffers/src/primitives.rs", function: "crate.primitives.<impl>.<Follow>.follow", lines: [297, 299]}
+      - {file: "rust/flatbuffers/src/push.rs", function: "crate.push.Push.push", lines: [27, 27]}
+      - {file: "rust/flatbuffers/src/push.rs", function: "crate.push.PushAlignment.new", lines: [43, 45]}
+      - {file: "rust/flatbuffers/src/table.rs", function: "crate.table.Table.new", lines: [29, 31]}
+      - {file: "rust/flatbuffers/src/table.rs", function: "crate.table.Table.vtable", lines: [33, 35]}
+      - {file: "rust/flatbuffers/src/table.rs", function: "crate.table.Table.get", lines: [37, 47]}
+      - {file: "rust/flatbuffers/src/table.rs", function: "crate.table.Table.<Follow>.follow", lines: [53, 55]}
+      - {file: "rust/flatbuffers/src/table.rs", function: "crate.table.buffer_has_identifier", lines: [59, 69]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.Vector.new", lines: [66, 72]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.Vector.get", lines: [86, 91]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.Vector.safe_slice", lines: [101, 111]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.follow_cast_ref", lines: [137, 142]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.<impl>.<Follow>.follow", lines: [146, 150]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.follow_slice_helper", lines: [154, 162]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.<impl>.<Follow>.follow~2", lines: [168, 170]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.Vector.<Follow>.follow", lines: [176, 178]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.VectorIter.from_slice", lines: [205, 212]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.VectorIter.<Iterator>.next", lines: [231, 243]}
+      - {file: "rust/flatbuffers/src/vector.rs", function: "crate.vector.VectorIter.<DoubleEndedIterator>.next_back", lines: [267, 277]}
+      - {file: "rust/flatbuffers/src/verifier.rs", function: "crate.verifier.Verifier.deref_soffset", lines: [299, 324]}
+      - {file: "rust/flatbuffers/src/verifier.rs", function: "crate.verifier.TableVerifier.visit_union", lines: [414, 452]}
+      - {file: "rust/flatbuffers/src/vtable.rs", function: "crate.vtable.VTable.init", lines: [36, 38]}
+      - {file: "rust/flatbuffers/src/vtable.rs", function: "crate.vtable.VTable.get", lines: [61, 67]}
+      - {file: "rust/flatbuffers/src/vtable.rs", function: "crate.vtable.VTable.<Follow>.follow", lines: [90, 92]}
+      - {file: "rust/flatbuffers/src/vtable_writer.rs", function: "crate.vtable_writer.VTableWriter.write_vtable_byte_length", lines: [42, 47]}
+      - {file: "rust/flatbuffers/src/vtable_writer.rs", function: "crate.vtable_writer.VTableWriter.write_object_inline_size", lines: [51, 55]}
+      - {file: "rust/flatbuffers/src/vtable_writer.rs", function: "crate.vtable_writer.VTableWriter.write_field_offset", lines: [62, 67]}
+      - {file: "rust/flatbuffers/src/array.rs", lines: [73, 74]}
+      - {file: "rust/flatbuffers/src/builder.rs", lines: [24, 343]}
+      - {file: "rust/flatbuffers/src/endian_scalar.rs", lines: [33, 145]}
+      - {file: "rust/flatbuffers/src/primitives.rs", lines: [144, 313]}
+      - {file: "rust/flatbuffers/src/push.rs", lines: [63, 68]}
+      - {file: "rust/flatbuffers/src/table.rs", lines: [21, 24]}
+      - {file: "rust/flatbuffers/src/vector.rs", lines: [25, 167]}
+      - {file: "rust/flatbuffers/src/verifier.rs", lines: [8, 8]}
+    granularity: function
+    source: diff
+    excluded: "large refactor: the fix touches 66 functions in 11 Rust files (474 changed lines) after filtering; threshold is more than 15 functions or more than 8 files"
+    expected_rules: []
+    expected_reason: "not decided, case excluded: the advisory is about code emitted by the C++ generator being callable from safe Rust; in the runtime crate the nearest pattern is ptr::copy_nonoverlapping without a length check in read_scalar / emplace_scalar"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: 66 functions, almost all fallout of making Follow::follow and Push::push unsafe fn; no narrowing is defensible with confidence (the advisory's subject is generated code), so the automatic large-refactor exclusion stands. Not part of the sample; reviewed because it was auto-excluded", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0118
+    class: U
+    repo: https://github.com/apache/arrow-rs
+    vuln_rev: "62934e95f24729899f6205d39005b0e940f8190c"
+    fixed_rev: "74b520c42143d12efbf93af64112cf16bc8f8643"
+    member: "arrow"
+    ground_truth:
+      - {file: "arrow/src/array/array_binary.rs", function: "crate.array.array_binary.FixedSizeBinaryArray.value", lines: [412, 425]}
+      - {file: "arrow/src/array/array_binary.rs", function: "crate.array.array_binary.FixedSizeBinaryArray.<From>.from", lines: [603, 619]}
+      - {file: "arrow/src/array/data.rs", function: "crate.array.data.ArrayData.validate", lines: [323, 326]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "FixedSizeBinaryArray::value builds a slice with slice::from_raw_parts at an offset into a values buffer whose length was never checked against len * byte_width (ArrayData::validate is an empty stub)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "wrong: the fix (chosen by hand, PR #810) only fills in ArrayData validation, so the diff misses the functions the advisory is about: FixedSizeBinaryArray::value (the unchecked read) and From<ArrayData> for FixedSizeBinaryArray (accepts the unchecked data); UnionArray::try_new was incidental. Not part of the sample; reviewed because the fix commit was picked by hand", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0115
+    class: U
+    repo: https://github.com/iqlusioninc/crates
+    vuln_rev: "6d9b2242b31a2756b68d9f7bb17dcfd7ec0edfa2"
+    fixed_rev: "09db40c56cfb708b77017db48940a5aaf112fbf3"
+    member: "zeroize/derive"
+    ground_truth:
+      - {file: "zeroize/derive/src/lib.rs", function: "crate.ZeroizeAttrs.parse", lines: [49, 59]}
+    granularity: function
+    source: manual
+    excluded: null
+    expected_rules: []
+    expected_reason: "proc-macro attribute-parsing logic bug (container attribute of an enum not inspected), a missing-functionality defect; no rule pattern"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "noisy: parse_attr and parse_meta only receive extra parameters and new misuse diagnostics; the defect (container attributes of an enum never inspected) is in ZeroizeAttrs::parse", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0114
+    class: U
+    repo: https://github.com/Absolucy/nanorand-rs
+    vuln_rev: "8e282f2f413d7cac73adf6a20c31bc4d5800cb8b"
+    fixed_rev: "340f893dbc9db3e43c6315b05eff4b0b150220d2"
+    member: "nanorand"
+    ground_truth:
+      - {file: "nanorand/src/tls.rs", function: "crate.tls.TlsWyRand.<Deref>.deref", lines: [20, 22]}
+      - {file: "nanorand/src/tls.rs", function: "crate.tls.TlsWyRand.<DerefMut>.deref_mut", lines: [28, 30]}
+      - {file: "nanorand/src/tls.rs", lines: [9, 25]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "aliased &mut created by dereferencing the raw pointer from UnsafeCell::get (`&mut *(*self.0).get()`); raw pointer deref is not a U3-listed operation (near miss) and no unsafe impl Send/Sync is involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0113
+    class: U
+    repo: https://github.com/metrics-rs/metrics
+    vuln_rev: "5be6c93b6d186ca4745d1a7f2c1a42dee86c21e4"
+    fixed_rev: "7b896a2fbc0f4112b5e08e0f1a3592ccafdd467d"
+    member: "metrics-util"
+    ground_truth:
+      - {file: "metrics-util/src/bucket.rs", lines: [99, 100]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: [unsafe-send-sync-impl]
+    expected_reason: "unbounded `unsafe impl Send/Sync for Block<T>` is exactly the bug (fix adds T: Send / T: Sync)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0110
+    class: U
+    repo: https://github.com/bytecodealliance/wasmtime
+    vuln_rev: "e56312e61a71f90c3d7fe9edbe817ec9a7584f4f"
+    fixed_rev: "101998733b74624cbd348a2366d05760b40181f3"
+    member: "crates/wasmtime"
+    ground_truth:
+      - {file: "crates/wasmtime/src/store.rs", function: "crate.store.Store.gc", lines: [579, 581], advisory_path: "wasmtime::Store::gc"}
+      - {file: "crates/wasmtime/src/linker.rs", function: "crate.linker.Linker.func_wrap", lines: [399, 409], advisory_path: "wasmtime::Linker::func_wrap"}
+      - {file: "crates/wasmtime/src/linker.rs", function: "crate.linker.Linker.func_new", lines: [294, 305], advisory_path: "wasmtime::Linker::func_new"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "GC-timing/rooting logic error (insert_with_gc may collect references that are not yet on the Wasm stack); the `ptr::write` calls in Val::write_value_to only store the raw pointer and are not the faulty operation (near miss for dangerous-unsafe-op)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0100
+    class: C
+    repo: https://github.com/RustCrypto/hashes
+    vuln_rev: "726e3c3978a77eb4318b4511eed5ac885375acd0"
+    fixed_rev: "93d895de72c2cb3ac7bc106f03e33715f8f304c2"
+    member: "sha2"
+    ground_truth:
+      - {file: "sha2/src/sha512/x86.rs", function: "crate.sha512.x86.load_data_avx2", lines: [93, 129]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "wrong load offsets in the AVX2 SHA-512 backend give wrong digests; near miss: data.add(i + 1) is arithmetic feeding a pointer op in unsafe code, but the reads stay in bounds and the failure is a miscomputed hash, not an overflow or memory error"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0081
+    class: T
+    repo: https://github.com/actix/actix-web
+    vuln_rev: "f6e69919ede4872c1d987b4b932c44580190971c"
+    fixed_rev: "e965d8298f421e9c89fe98b1300b8361e948c324"
+    member: "actix-http"
+    ground_truth:
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.MessageType.set_headers", lines: [61, 167]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.step", lines: [496, 515]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_size", lines: [517, 546]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_size_lws", lines: [548, 560]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_extension", lines: [561, 566]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_size_lf", lines: [567, 579]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_body", lines: [581, 607]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_body_cr", lines: [609, 617]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_body_lf", lines: [618, 626]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_end_cr", lines: [627, 635]}
+      - {file: "actix-http/src/h1/decoder.rs", function: "crate.h1.decoder.ChunkedState.read_end_lf", lines: [636, 644]}
+      - {file: "actix-http/src/h1/encoder.rs", function: "crate.h1.encoder.MessageType.encode_headers", lines: [53, 216]}
+      - {file: "actix-http/src/h1/decoder.rs", lines: [411, 645]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [overflow-candidate]
+    expected_reason: "low confidence: the advisory only says invalid requests were not detected (request smuggling, no rule); one of the cases the fix closes is the chunk size wrapping in ChunkedState::read_size (`*size *= radix; *size += digit` on bytes off the wire, replaced by checked_mul), which is the P3 pattern"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0080
+    class: T
+    repo: https://github.com/alexcrichton/tar-rs
+    vuln_rev: "860858be1ef65b3640c27ed752ea080995f86a64"
+    fixed_rev: "d90a02f582c03dfa0fd11c78d608d0974625ae5d"
+    member: ""
+    ground_truth:
+      - {file: "src/entry.rs", function: "crate.entry.EntryFields.unpack_in", lines: [364, 428]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [path-traversal]
+    expected_reason: "archive-controlled path components pushed onto dst (`file_dst.push(part)`) reach the fs sink `fs::create_dir_all(&parent)` before validate_inside_dst runs"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: EntryFields::unpack_in holds the create_dir_all the fix replaces; the advisory-db names the public entry Archive::unpack, several calls up", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0079
+    class: T
+    repo: https://github.com/hyperium/hyper
+    vuln_rev: "11cb4725ad2065ce1650b7187be3d918219176c5"
+    fixed_rev: "1068b994df1aec2a0a562224965a80ddced50e60"
+    member: ""
+    ground_truth:
+      - {file: "src/proto/h1/decode.rs", function: "crate.proto.h1.decode.ChunkedState.read_size", lines: [205, 236]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [overflow-candidate]
+    expected_reason: "unchecked `*` and `+` (compound-assignment form) on the chunk-size integer derived from bytes read off the wire, in ChunkedState::read_size; the fix replaces them with checked_mul/checked_add"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0075
+    class: C
+    repo: https://github.com/arkworks-rs/r1cs-std
+    vuln_rev: "1ad210462cae103ebf2718a397cca33f44183f65"
+    fixed_rev: "47ddbaa411afe7c499311a248a38135e5a192b67"
+    member: ""
+    ground_truth:
+      - {file: "src/fields/mod.rs", function: "crate.fields.FieldVar.mul_by_inverse", lines: [161, 168]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing R1CS constraint (cryptographic protocol logic); no rule (`unwrap_or` on the same line is not `unwrap` and no panic is involved)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0074
+    class: T
+    repo: https://github.com/rust-ammonia/ammonia
+    vuln_rev: "23e3f5defcc082fcd084bbd8e83f664076e04685"
+    fixed_rev: "bcdf2d862675a37f4cace6c5258bb09aac0b9f85"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.Builder.clean_dom", lines: [1732, 1809]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "HTML-sanitizer logic flaw (no rule); no listed sink or operation involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0073
+    class: P
+    repo: https://github.com/tokio-rs/prost
+    vuln_rev: "0833d467bd55ee7ff427e0484fc299366ad9ab7d"
+    fixed_rev: "59f2a7311dd6540696bfd0145f5281ce495f4385"
+    member: "prost-types"
+    ground_truth:
+      - {file: "prost-types/src/lib.rs", function: "crate.Duration.normalize", lines: [35, 53]}
+      - {file: "prost-types/src/lib.rs", function: "crate.Timestamp.normalize", lines: [104, 120]}
+      - {file: "prost-types/src/lib.rs", function: "crate.SystemTime.<From>.from", lines: [148, 157]}
+      - {file: "prost-types/src/lib.rs", lines: [147, 147]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [overflow-candidate]
+    expected_reason: "unchecked `+=` / `-=` on the input-derived i64 `seconds` in Timestamp::normalize, called directly by the advisory-named From<Timestamp> for SystemTime (the fix replaces them with checked_add / checked_sub)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0072
+    class: U
+    repo: https://github.com/tokio-rs/tokio
+    vuln_rev: "a5ee2f0d3d78daa01e2c6c12d22b82474dc5c32a"
+    fixed_rev: "e3851089207f6617dfcc0c7a73013eb819a0bfe0"
+    member: "tokio"
+    ground_truth:
+      - {file: "tokio/src/runtime/task/join.rs", function: "crate.runtime.task.join.JoinHandle.abort", lines: [193, 197]}
+      - {file: "tokio/src/runtime/task/raw.rs", function: "crate.runtime.task.raw.vtable", lines: [30, 38]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "thread-affinity logic error (future dropped on the aborting thread instead of being scheduled for cancellation); no U3 operation and no unsafe impl Send/Sync at the blamed location"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0070
+    class: U
+    repo: https://github.com/dimforge/nalgebra
+    vuln_rev: "02614cbdb798217958af09e2ea80dfaf6ac1599d"
+    fixed_rev: "a803271fcce75b7c151e92aa099dfa546db4adc5"
+    member: ""
+    ground_truth:
+      - {file: "src/base/vec_storage.rs", lines: [27, 27]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "missing invariant validation in an auto-derived Deserialize impl; there is no code at the blamed location (a derive attribute), and the out-of-bounds accesses happen later in unrelated accessors, so no listed pattern is at the blamed location"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: file-level on the derive attribute of struct VecStorage (line 27); the Deserialize impl is derived, so no function exists in the vulnerable snapshot", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0069
+    class: T
+    repo: https://github.com/lettre/lettre
+    vuln_rev: "d930c42d5069e344a9dfa84ebe4b60bf3b11ac64"
+    fixed_rev: "8bfc20506cc5e098fe6eb3d1cafe3bea791215ce"
+    member: "lettre"
+    ground_truth:
+      - {file: "lettre/src/smtp/mod.rs", function: "crate.smtp.SmtpTransport.<Transport>.send", lines: [382, 478], advisory_path: "lettre::smtp::SmtpTransport::send"}
+      - {file: null, advisory_path: "lettre::transport::smtp::SmtpTransport::send_raw"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "flawed escaping state machine in a hand-written protocol encoder (SMTP command injection); command-injection only covers process::Command sinks, so no rule"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0063
+    class: T
+    repo: https://github.com/kivikakk/comrak
+    vuln_rev: "6d6b77282ed519835c975463c25aaed0d8650728"
+    fixed_rev: "b72340cabe4749952530b4fb6b4fcc706bc973e5"
+    member: ""
+    ground_truth:
+      - {file: "src/html.rs", function: "crate.html.HtmlFormatter.escape_href", lines: [274, 319]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "incorrect HTML/URL escaping table (sanitizer logic); no listed sink or operation involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0050
+    class: U
+    repo: https://github.com/tiby312/reorder
+    vuln_rev: "5a7aa092eaf9de87300e6c5b25a2df953d60ee90"
+    fixed_rev: "8b0eba0b117b82abe4c24c05188b4d30ba4d461e"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.swap_index", lines: [47, 58]}
+      - {file: "src/lib.rs", function: "crate.reorder_index_aux", lines: [63, 80]}
+      - {file: "src/lib.rs", function: "crate.reorder_index_aux_vec", lines: [86, 101]}
+      - {file: "src/lib.rs", function: "crate.reorder_index", lines: [105, 136]}
+      - {file: "src/lib.rs", lines: [104, 104]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op, unsafe-length-from-input]
+    expected_reason: "slice::from_raw_parts_mut and Vec::set_len in swap_index with a length taken unchecked from the caller-supplied iterator's len()"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0048
+    class: U
+    repo: https://github.com/Alexhuszagh/rust-stackvector
+    vuln_rev: "d0382d5ef903fc96bdcc08c02e36e6dd2eda11a5"
+    fixed_rev: "f45657d5a823a67bb3f5cffee65efbb401a44192"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.StackVec.<Extend>.extend", lines: [896, 920]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "`ptr::write(ptr.padd(count), out)` inside an unsafe block, bounded only by the untrusted size_hint lower bound, is the out-of-bounds write"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0041
+    class: P
+    repo: https://github.com/zeta12ti/parse_duration
+    vuln_rev: "26940ab5cd4e3a9d6bd97aa101f8d4bbfd18ee8c"
+    fixed_rev: "7757a3bda975429a45c16fff4d34d751c5d8a367"
+    member: ""
+    ground_truth:
+      - {file: "src/parse.rs", function: "crate.parse.parse", lines: [220, 390], advisory_path: "parse_duration::parse"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "CPU/memory exhaustion through BigInt exponentiation with an input-derived exponent; `pow` is not covered by overflow-candidate (and BigInt does not overflow), and no listed allocation call takes the size, so unbounded-allocation does not apply either"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0040
+    class: U
+    repo: https://github.com/ibabushkin/arenavec
+    vuln_rev: "f931efb96ffe85a6433eb1861b698ad38515e427"
+    fixed_rev: "e269bb46aca563af035ca56f98533ba667911f81"
+    member: ""
+    ground_truth:
+      - {file: "src/common.rs", function: "crate.common.Slice.new", lines: [75, 89]}
+      - {file: "src/common.rs", function: "crate.common.SliceVec.resize_with", lines: [418, 443]}
+      - {file: "src/common.rs", function: "crate.common.SliceVec.resize", lines: [446, 471]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "borderline: Slice::new sets res.len = len and then fills the slots with ptr::write(.., T::default()) in an unsafe loop, so a panicking default() drops uninitialised slots (the listed op is the interrupted step, the early length is the cause); the double drop in resize goes through ptr::drop_in_place, which U3 does not list"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0038
+    class: U
+    repo: https://github.com/fltk-rs/fltk-rs
+    vuln_rev: "f067beed0e54888125e0c81bc5de15e4e931dc75"
+    fixed_rev: "1b2e6bdbd93df1f673f5c57cf6dda625e36b4810"
+    member: "fltk"
+    ground_truth:
+      - {file: "fltk/src/prelude.rs", function: "crate.prelude.WidgetExt.set_label_type", lines: [229, 229], advisory_path: "fltk::prelude::WidgetExt::set_label_type"}
+      - {file: "fltk/src/prelude.rs", function: "crate.prelude.WindowExt.set_icon", lines: [416, 418], advisory_path: "fltk::prelude::WindowExt::set_icon"}
+      - {file: "fltk/src/image.rs", function: "crate.image.Pixmap.new", lines: [552, 567], advisory_path: "fltk::image::Pixmap::new"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "invalid enum value passed through an FFI call and dereferenced on the C++ side; FFI calls are not a U3 operation (the mem::transmute calls in neighbouring getters are unrelated)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0036
+    class: U
+    repo: https://github.com/droundy/internment
+    vuln_rev: "863dbc0653cb8b265b3b969d94b4bdaa50fd4a03"
+    fixed_rev: "2928a87a0c9f86c46ba70f8c8058d9b7b10a241d"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", lines: [149, 150]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: [unsafe-send-sync-impl]
+    expected_reason: "unbounded `unsafe impl Send/Sync for Intern<T>`; the missing `T: Send` / `T: Sync` bounds are the bug"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: file-level on the two unsafe impl lines (149-150); the bug is the impl items, no function exists", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0033
+    class: U
+    repo: https://github.com/thepowersgang/stack_dst-rs
+    vuln_rev: "807e9d45019c02369e11d40bd181cbf7bb7981fc"
+    fixed_rev: "2a4d53809e3000f40085f2b229b6b1a33759881d"
+    member: ""
+    ground_truth:
+      - {file: "src/stack.rs", function: "crate.stack.StackA.push_inner", lines: [56, 78]}
+      - {file: "src/stack.rs", function: "crate.stack.StackA.push_stable", lines: [87, 106]}
+      - {file: "src/stack.rs", function: "crate.stack.StackA.push_str", lines: [145, 149]}
+      - {file: "src/stack.rs", function: "crate.stack.StackA.push_cloned", lines: [153, 161]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "borderline: push_cloned fills slots with ptr::write(ptr, val.clone()) in an unsafe block after push_inner has already counted them as live, so a panicking clone leaves uninitialised slots to be dropped; the listed op is the interrupted step, the early length update is the cause"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0032
+    class: U
+    repo: https://github.com/wwylele/byte-struct-rs
+    vuln_rev: "9c41996e55bc91557edd6fa6f6a1c07a48c55731"
+    fixed_rev: "a535678377de12bc6bc22620c5f59bcc1369f76f"
+    member: "byte_struct"
+    ground_truth:
+      - {file: "byte_struct/src/lib.rs", lines: [411, 442]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "`std::mem::uninitialized()` (filled via `std::ptr::write`) inside the unsafe block of read_bytes_default_le / read_bytes_default_be for arrays is the operation the advisory blames"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0031
+    class: U
+    repo: https://github.com/bennetthardwick/nano-arena
+    vuln_rev: "f5306c73a0f8f260eb49f9f0a8509ef85f038244"
+    fixed_rev: "6b83f9d0708337a9f8b709c1624a8587021ceba2"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.Arena.split_at", lines: [223, 239], advisory_path: "nano_arena::Arena::split_at"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "double-evaluation (TOCTOU) of a user-controlled Borrow impl leading to aliased &mut; the unsafe block is a raw-pointer `as_mut()` reborrow, which is not a listed U3 operation, and its `.unwrap()` is not a panic bug"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0030
+    class: U
+    repo: https://github.com/okready/scratchpad
+    vuln_rev: "0cc776fb47e5339259675eca5548dc524aa7c550"
+    fixed_rev: "891561bea4a88d051e260d59b6adb708f9473bde"
+    member: ""
+    ground_truth:
+      - {file: "src/traits.rs", function: "crate.traits.T.<SliceMoveSource>.move_elements", lines: [867, 878]}
+      - {file: "src/traits.rs", function: "crate.traits.T.<SliceMoveSource>.move_elements~2", lines: [886, 893]}
+      - {file: "src/traits.rs", function: "crate.traits.Box.<SliceMoveSource>.move_elements", lines: [901, 914]}
+      - {file: "src/traits.rs", function: "crate.traits.U.<SliceMoveSourceCollection>.move_all_elements", lines: [1137, 1148]}
+      - {file: "src/traits.rs", function: "crate.traits.Box.<SliceMoveSourceCollection>.move_all_elements", lines: [1175, 1186]}
+      - {file: "src/traits.rs", lines: [25, 25]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "ptr::read inside unsafe duplicates ownership of each element before calling the user-supplied closure, giving a double drop on panic (plus Box::from_raw used to free the shell afterwards in the Box impls)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0028
+    class: U
+    repo: https://github.com/antonmarsden/toodee
+    vuln_rev: "676fe64fbbb7a9dca77b5489e502f12b20562eb9"
+    fixed_rev: "ced70c172486fb4827c172cd8238053df3d1dcdb"
+    member: ""
+    ground_truth:
+      - {file: "src/toodee.rs", function: "crate.toodee.TooDee.insert_row", lines: [659, 688]}
+      - {file: "src/toodee.rs", function: "crate.toodee.TooDee.insert_col", lines: [796, 835]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op, unsafe-length-from-input]
+    expected_reason: "ptr::copy duplicating owned elements before user iterator code runs, ptr::write per yielded item, and Vec::set_len with a length derived from the caller iterator's len(), all in insert_row / insert_col"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: insert_row is the advisory's function, insert_col has the same flaw and is fixed by the same commit", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0027
+    class: U
+    repo: https://gitlab.com/tprodanov/bam
+    vuln_rev: "856c9432946d8bfe7ebb5e7bd8adf66f64a8bd5c"
+    fixed_rev: "061eee38d47c96339b796c943d3163235490532d"
+    member: ""
+    ground_truth:
+      - {file: "src/bgzip/mod.rs", function: "crate.bgzip.Block.new", lines: [160, 167]}
+      - {file: "src/bgzip/mod.rs", function: "crate.bgzip.Block.load", lines: [296, 332]}
+      - {file: "src/bgzip/mod.rs", function: "crate.bgzip.Block.decompress", lines: [336, 380]}
+      - {file: "src/record/cigar.rs", function: "crate.record.cigar.Cigar.fill_from", lines: [208, 215]}
+      - {file: "src/record/mod.rs", function: "crate.record.resize", lines: [247, 252]}
+      - {file: "src/record/mod.rs", function: "crate.record.Record.fill_from_bam", lines: [375, 453]}
+      - {file: "src/record/sequence.rs", function: "crate.record.sequence.Sequence.fill_from", lines: [90, 99]}
+      - {file: "src/record/sequence.rs", function: "crate.record.sequence.Qualities.fill_from", lines: [326, 332]}
+      - {file: "src/record/tags.rs", function: "crate.record.tags.TagViewer.fill_from", lines: [580, 597]}
+      - {file: "src/bgzip/mod.rs", lines: [135, 139]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op, unsafe-length-from-input, overflow-candidate]
+    expected_reason: "single line in Block::load: `Vec::set_len` inside unsafe (U3) whose length argument is derived from stream input (T5) through an unchecked `-` that underflows (P3)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0026
+    class: T
+    repo: https://github.com/kivikakk/comrak
+    vuln_rev: "56eabe0cd5b03160ce8150df816eec28666387e0"
+    fixed_rev: "b3efbb6e427bcd33bb14db45753ad4fd98e0f5bf"
+    member: ""
+    ground_truth:
+      - {file: "src/lexer.pest"}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "HTML-sanitizer logic (case-sensitive URL-scheme blocklist in a grammar file); no listed sink or pattern. Near miss only by proximity: scanners::search uses str::from_utf8_unchecked, which is not a U3 operation and is unrelated"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct: the whole fix is one rule of the pest grammar (src/lexer.pest:58, dangerous_url); no Rust source changes, so the file-level entry on a non-Rust file is all there is. Out of reach for a Rust analyzer", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0022
+    class: U
+    repo: https://gitlab.com/YottaDB/Lang/YDBRust
+    vuln_rev: "2bc8c79a5d7e8ab5fa561918aaa6f43f66d221fa"
+    fixed_rev: "086ea414229022b93579cac8bb967415c449a764"
+    member: ""
+    ground_truth:
+      - {file: "src/simple_api/mod.rs", function: "crate.simple_api.Key.sub_next_self_st", lines: [1070, 1074], advisory_path: "yottadb::Key::sub_next_self_st"}
+      - {file: "src/simple_api/mod.rs", function: "crate.simple_api.Key.sub_prev_self_st", lines: [1127, 1131], advisory_path: "yottadb::Key::sub_prev_self_st"}
+    granularity: function
+    source: advisory
+    excluded: null
+    expected_rules: []
+    expected_reason: "dangling raw pointers kept across a Vec reallocation and passed to FFI; no U3 operation is the mechanism (the `Vec::set_len` calls in the function only fix up lengths after the FFI call)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0020
+    class: T
+    repo: https://github.com/hyperium/hyper
+    vuln_rev: "4d2125c67c8087de863f74278a017c4caf37e6a9"
+    fixed_rev: "8f93123efef5c1361086688fe4f34c83c89cec02"
+    member: ""
+    ground_truth:
+      - {file: "src/proto/h1/role.rs", function: "crate.proto.h1.role.Server.<Http1Transaction>.parse", lines: [112, 283]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: []
+    expected_reason: "request smuggling through lenient protocol parsing (no rule); no listed sink or operation involved"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0018
+    class: U
+    repo: https://github.com/qwertz19281/rust_utils
+    vuln_rev: "f4eae5b2ffd5501aef1beb3d6a3540be5a908172"
+    fixed_rev: "20cb73d39f1ccb9386e45edfc644413edbade0bc"
+    member: ""
+    ground_truth:
+      - {file: "src/imp/vec.rs", function: "crate.imp.vec.Vec.<VecExt>.insert_slice_clone", lines: [72, 94]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "ptr::copy in insert_slice_clone duplicates owned elements before user clone() runs (double drop on panic)"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0011
+    class: U
+    repo: https://github.com/cogciprocate/ocl
+    vuln_rev: "60b175cc6696f78dc26e72f457c91cfd5bd41f53"
+    fixed_rev: "6b3a84803060a4a824805de954c8d4140543b71a"
+    member: "ocl"
+    ground_truth:
+      - {file: "ocl/src/standard/event.rs", lines: [1119, 1163]}
+    granularity: file
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "`ptr::read(events.get_unchecked(idx))` inside unsafe duplicates the element, which is dropped twice when the following `.into()` panics before `mem::forget(events)`"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0010
+    class: U
+    repo: https://github.com/strake/containers.rs
+    vuln_rev: "d27a2677db4225b2b3744229b0234c500dcd3a83"
+    fixed_rev: "7389a24d84ee7ff1d60dc87270882897679c4afa"
+    member: ""
+    ground_truth:
+      - {file: "src/util/mod.rs", function: "crate.util.mutate", lines: [8, 8]}
+      - {file: "src/util/mod.rs", function: "crate.util.mutate2", lines: [11, 15]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "`ptr::read` inside the unsafe blocks of mutate/mutate2 duplicates a value that is dropped twice when the closure panics, exactly the operation the advisory blames"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+    review: {by: "claude (machine review, pending human confirmation)", verdict: "correct", date: 2026-11-11}
+
+  - id: RUSTSEC-2021-0007
+    class: T
+    repo: https://github.com/rust-av/rust-av
+    vuln_rev: "ab29452f1ecd4153e3573b499d24972897dff533"
+    fixed_rev: "fb7bf1879b1b12fd30182d97e5f200e7d013f91d"
+    member: "data"
+    ground_truth:
+      - {file: "data/src/frame.rs", function: "crate.frame.Frame.copy_from_raw_parts", lines: [556, 585]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op, unsafe-length-from-input]
+    expected_reason: "`slice::from_raw_parts` inside unsafe in a safe pub fn, with both the pointer (`rr`) and the length (`hb * s_linesize`) taken from caller-supplied iterators"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}
+
+  - id: RUSTSEC-2021-0003
+    class: U
+    repo: https://github.com/servo/rust-smallvec
+    vuln_rev: "0b2b4e53a5cf86740b2515907dd53252b3b59401"
+    fixed_rev: "9998ba0694a6b51aa6604748b00b6a98f0a0039e"
+    member: ""
+    ground_truth:
+      - {file: "src/lib.rs", function: "crate.SmallVec.insert_many", lines: [1011, 1089]}
+    granularity: function
+    source: diff
+    excluded: null
+    expected_rules: [dangerous-unsafe-op]
+    expected_reason: "ptr::copy and ptr::write inside the unsafe block of insert_many write beyond the allocated capacity on the 'more elements than the hint' path"
+    frozen: {date: 2026-11-11, catalogue: "0.3.0"}

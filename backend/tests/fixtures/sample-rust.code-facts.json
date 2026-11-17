@@ -1,0 +1,2200 @@
+{
+ "crates": [
+  {
+   "name": "sample_rust",
+   "root_file": "src/lib.rs"
+  },
+  {
+   "name": "sample_rust",
+   "root_file": "src/main.rs"
+  }
+ ],
+ "dispatch": [
+  [
+   0,
+   4
+  ]
+ ],
+ "files": [
+  {
+   "crate_name": "sample_rust",
+   "id": 0,
+   "path": "src/lib.rs",
+   "symbols": []
+  },
+  {
+   "crate_name": "sample_rust",
+   "id": 1,
+   "path": "src/models.rs",
+   "symbols": [
+    {
+     "col": 9,
+     "kind": "enum",
+     "line": 6,
+     "name": "Category"
+    },
+    {
+     "col": 11,
+     "kind": "struct",
+     "line": 14,
+     "name": "Product"
+    },
+    {
+     "col": 10,
+     "kind": "trait",
+     "line": 20,
+     "name": "Priced"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 21,
+     "name": "base_price"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 23,
+     "name": "final_price"
+    },
+    {
+     "col": 11,
+     "kind": "fn",
+     "line": 29,
+     "name": "new"
+    },
+    {
+     "col": 11,
+     "kind": "fn",
+     "line": 33,
+     "name": "total"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 39,
+     "name": "base_price"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 45,
+     "name": "fmt"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 51,
+     "name": "default"
+    }
+   ]
+  },
+  {
+   "crate_name": "sample_rust",
+   "id": 2,
+   "path": "src/pricing.rs",
+   "symbols": [
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 4,
+     "name": "quote"
+    }
+   ]
+  },
+  {
+   "crate_name": "sample_rust",
+   "id": 3,
+   "path": "src/utils.rs",
+   "symbols": [
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 2,
+     "name": "slugify"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 9,
+     "name": "legacy_export"
+    }
+   ]
+  },
+  {
+   "crate_name": "sample_rust",
+   "id": 4,
+   "path": "src/main.rs",
+   "symbols": [
+    {
+     "col": 3,
+     "kind": "fn",
+     "line": 4,
+     "name": "main"
+    }
+   ]
+  }
+ ],
+ "flows": [
+  {
+   "from": "v0",
+   "kind": "flow",
+   "to": "v15",
+   "via": "dispatch"
+  },
+  {
+   "from": "v16",
+   "kind": "flow",
+   "to": "v1",
+   "via": "dispatch"
+  },
+  {
+   "from": "v2",
+   "kind": "pass",
+   "to": "v0",
+   "via": "arg:0"
+  },
+  {
+   "from": "v1",
+   "kind": "ret",
+   "to": "s0",
+   "via": "return"
+  },
+  {
+   "from": "s0",
+   "kind": "flow",
+   "to": "s1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v3",
+   "kind": "flow",
+   "to": "s1",
+   "via": "arg:1"
+  },
+  {
+   "from": "s1",
+   "kind": "flow",
+   "to": "s2",
+   "via": "arg:0"
+  },
+  {
+   "from": "s2",
+   "kind": "flow",
+   "to": "v5",
+   "via": "return"
+  },
+  {
+   "from": "v6",
+   "kind": "flow",
+   "to": "s4",
+   "via": "recv"
+  },
+  {
+   "from": "s4",
+   "kind": "flow",
+   "to": "s3",
+   "via": "field:name"
+  },
+  {
+   "from": "v7",
+   "kind": "flow",
+   "to": "s3",
+   "via": "field"
+  },
+  {
+   "from": "v8",
+   "kind": "flow",
+   "to": "s3",
+   "via": "field"
+  },
+  {
+   "from": "s3",
+   "kind": "flow",
+   "to": "v9",
+   "via": "return"
+  },
+  {
+   "from": "v10",
+   "kind": "pass",
+   "to": "v20",
+   "via": "arg:0"
+  },
+  {
+   "from": "v11",
+   "kind": "pass",
+   "to": "v21",
+   "via": "arg:1"
+  },
+  {
+   "from": "v12",
+   "kind": "pass",
+   "to": "v22",
+   "via": "arg:2"
+  },
+  {
+   "from": "v13",
+   "kind": "pass",
+   "to": "v23",
+   "via": "arg:3"
+  },
+  {
+   "from": "v24",
+   "kind": "ret",
+   "to": "s5",
+   "via": "return"
+  },
+  {
+   "from": "s5",
+   "kind": "flow",
+   "to": "v14",
+   "via": "return"
+  },
+  {
+   "from": "v15",
+   "kind": "flow",
+   "to": "v16",
+   "via": "return"
+  },
+  {
+   "from": "v17",
+   "kind": "pass",
+   "to": "v15",
+   "via": "arg:0"
+  },
+  {
+   "from": "v16",
+   "kind": "ret",
+   "to": "s7",
+   "via": "return"
+  },
+  {
+   "from": "v18",
+   "kind": "flow",
+   "to": "s6",
+   "via": "macro"
+  },
+  {
+   "from": "v17",
+   "kind": "flow",
+   "to": "s6",
+   "via": "macro"
+  },
+  {
+   "from": "s7",
+   "kind": "flow",
+   "to": "s6",
+   "via": "macro"
+  },
+  {
+   "from": "v9",
+   "kind": "ret",
+   "to": "s8",
+   "via": "return"
+  },
+  {
+   "from": "s8",
+   "kind": "flow",
+   "to": "v19",
+   "via": "return"
+  },
+  {
+   "from": "v20",
+   "kind": "pass",
+   "to": "v2",
+   "via": "arg:0"
+  },
+  {
+   "from": "v21",
+   "kind": "pass",
+   "to": "v3",
+   "via": "arg:1"
+  },
+  {
+   "from": "v22",
+   "kind": "pass",
+   "to": "v4",
+   "via": "arg:2"
+  },
+  {
+   "from": "v5",
+   "kind": "ret",
+   "to": "s9",
+   "via": "return"
+  },
+  {
+   "from": "s9",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "s10",
+   "via": "arg:0"
+  },
+  {
+   "from": "s10",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "s11",
+   "via": "arg:0"
+  },
+  {
+   "from": "s11",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "s12",
+   "via": "arg:0"
+  },
+  {
+   "from": "s12",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "s13",
+   "via": "arg:0"
+  },
+  {
+   "from": "s13",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v23",
+   "kind": "flow",
+   "to": "v30",
+   "via": "match"
+  },
+  {
+   "from": "v30",
+   "kind": "flow",
+   "to": "s14",
+   "via": "recv"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "s15",
+   "via": "arg:0"
+  },
+  {
+   "from": "s15",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "s16",
+   "via": "arg:0"
+  },
+  {
+   "from": "s16",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "flow",
+   "to": "v24",
+   "via": "return"
+  },
+  {
+   "from": "v25",
+   "kind": "flow",
+   "to": "s20",
+   "via": "recv"
+  },
+  {
+   "from": "s20",
+   "kind": "flow",
+   "to": "s19",
+   "via": "recv"
+  },
+  {
+   "from": "s19",
+   "kind": "flow",
+   "to": "v31",
+   "via": "closure"
+  },
+  {
+   "from": "v31",
+   "kind": "flow",
+   "to": "s21",
+   "via": "recv"
+  },
+  {
+   "from": "s19",
+   "kind": "flow",
+   "to": "s18",
+   "via": "recv"
+  },
+  {
+   "from": "v31",
+   "kind": "flow",
+   "to": "s18",
+   "via": "arg:0"
+  },
+  {
+   "from": "s18",
+   "kind": "flow",
+   "to": "s17",
+   "via": "recv"
+  },
+  {
+   "from": "s17",
+   "kind": "flow",
+   "to": "v26",
+   "via": "return"
+  },
+  {
+   "from": "v27",
+   "kind": "flow",
+   "to": "s22",
+   "via": "recv"
+  },
+  {
+   "from": "s22",
+   "kind": "flow",
+   "to": "v28",
+   "via": "return"
+  },
+  {
+   "from": "v9",
+   "kind": "ret",
+   "to": "s23",
+   "via": "return"
+  },
+  {
+   "from": "s23",
+   "kind": "flow",
+   "to": "v32",
+   "via": "assign"
+  },
+  {
+   "from": "v32",
+   "kind": "pass",
+   "to": "v10",
+   "via": "arg:0"
+  },
+  {
+   "from": "v14",
+   "kind": "ret",
+   "to": "s24",
+   "via": "return"
+  },
+  {
+   "from": "s24",
+   "kind": "flow",
+   "to": "v33",
+   "via": "assign"
+  },
+  {
+   "from": "v19",
+   "kind": "ret",
+   "to": "s26",
+   "via": "return"
+  },
+  {
+   "from": "s26",
+   "kind": "flow",
+   "to": "v34",
+   "via": "assign"
+  }
+ ],
+ "fns": [
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 1,
+   "has_body": false,
+   "id": 0,
+   "line": 21,
+   "name": "base_price",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    }
+   ],
+   "ret_kind": "int",
+   "ret_type": "u64",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 1,
+   "has_body": true,
+   "id": 1,
+   "line": 23,
+   "name": "final_price",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    },
+    {
+     "index": 1,
+     "name": "quantity",
+     "ty": "u32",
+     "type_paths": [
+      "u32"
+     ]
+    },
+    {
+     "index": 2,
+     "name": "member",
+     "ty": "bool",
+     "type_paths": [
+      "bool"
+     ]
+    }
+   ],
+   "ret_kind": "int",
+   "ret_type": "u64",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 11,
+   "file": 1,
+   "has_body": true,
+   "id": 2,
+   "line": 29,
+   "name": "new",
+   "params": [
+    {
+     "index": 0,
+     "name": "name",
+     "ty": "&str",
+     "type_paths": [
+      "str"
+     ]
+    },
+    {
+     "index": 1,
+     "name": "price_cents",
+     "ty": "u64",
+     "type_paths": [
+      "u64"
+     ]
+    },
+    {
+     "index": 2,
+     "name": "category",
+     "ty": "Category",
+     "type_paths": [
+      "sample_rust::models::Category",
+      "sample_rust::Category"
+     ]
+    }
+   ],
+   "ret_kind": "other",
+   "ret_type": "Product",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 11,
+   "file": 1,
+   "has_body": true,
+   "id": 3,
+   "line": 33,
+   "name": "total",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    },
+    {
+     "index": 1,
+     "name": "quantity",
+     "ty": "u32",
+     "type_paths": [
+      "u32"
+     ]
+    },
+    {
+     "index": 2,
+     "name": "member",
+     "ty": "bool",
+     "type_paths": [
+      "bool"
+     ]
+    },
+    {
+     "index": 3,
+     "name": "coupon",
+     "ty": "Option<&str>",
+     "type_paths": [
+      "std::option::Option",
+      "core::option::Option"
+     ]
+    }
+   ],
+   "ret_kind": "int",
+   "ret_type": "u64",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 1,
+   "has_body": true,
+   "id": 4,
+   "line": 39,
+   "name": "base_price",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    }
+   ],
+   "ret_kind": "int",
+   "ret_type": "u64",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 1,
+   "has_body": true,
+   "id": 5,
+   "line": 45,
+   "name": "fmt",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    },
+    {
+     "index": 1,
+     "name": "f",
+     "ty": "&mut fmt::Formatter<'_>",
+     "type_paths": [
+      "std::fmt::Formatter",
+      "core::fmt::Formatter"
+     ]
+    }
+   ],
+   "ret_kind": "unit",
+   "ret_type": "Result<(), Error>",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 1,
+   "has_body": true,
+   "id": 6,
+   "line": 51,
+   "name": "default",
+   "params": [],
+   "ret_kind": "other",
+   "ret_type": "Product",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 2,
+   "has_body": true,
+   "id": 7,
+   "line": 4,
+   "name": "quote",
+   "params": [
+    {
+     "index": 0,
+     "name": "product",
+     "ty": "&Product",
+     "type_paths": [
+      "sample_rust::models::Product",
+      "sample_rust::Product"
+     ]
+    },
+    {
+     "index": 1,
+     "name": "quantity",
+     "ty": "u32",
+     "type_paths": [
+      "u32"
+     ]
+    },
+    {
+     "index": 2,
+     "name": "member",
+     "ty": "bool",
+     "type_paths": [
+      "bool"
+     ]
+    },
+    {
+     "index": 3,
+     "name": "coupon",
+     "ty": "Option<&str>",
+     "type_paths": [
+      "std::option::Option",
+      "core::option::Option"
+     ]
+    }
+   ],
+   "ret_kind": "int",
+   "ret_type": "u64",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 3,
+   "has_body": true,
+   "id": 8,
+   "line": 2,
+   "name": "slugify",
+   "params": [
+    {
+     "index": 0,
+     "name": "name",
+     "ty": "&str",
+     "type_paths": [
+      "str"
+     ]
+    }
+   ],
+   "ret_kind": "other",
+   "ret_type": "String",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 3,
+   "has_body": true,
+   "id": 9,
+   "line": 9,
+   "name": "legacy_export",
+   "params": [
+    {
+     "index": 0,
+     "name": "names",
+     "ty": "&[String]",
+     "type_paths": [
+      "slice"
+     ]
+    }
+   ],
+   "ret_kind": "other",
+   "ret_type": "String",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 3,
+   "file": 4,
+   "has_body": true,
+   "id": 10,
+   "line": 4,
+   "name": "main",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  }
+ ],
+ "manifest": "Cargo.toml",
+ "refs": [],
+ "root": "",
+ "schema_version": 1,
+ "sites": [
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 13,
+   "def_crate": null,
+   "detail": null,
+   "fn": 1,
+   "id": 0,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 24,
+   "literal_args": [],
+   "name": "base_price",
+   "paths": [],
+   "recv_type": [
+    "generic"
+   ],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": "*",
+   "fn": 1,
+   "id": 1,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 24,
+   "literal_args": [],
+   "name": "*",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": "-",
+   "fn": 1,
+   "id": 2,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 24,
+   "literal_args": [],
+   "name": "-",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 1,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": "Product",
+   "fn": 2,
+   "id": 3,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "struct",
+   "line": 30,
+   "literal_args": [],
+   "name": "Product",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 29,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 2,
+   "id": 4,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 30,
+   "literal_args": [],
+   "name": "to_string",
+   "paths": [
+    "generic::to_string",
+    "std::string::ToString::to_string",
+    "alloc::string::ToString::to_string"
+   ],
+   "recv_type": [
+    "str"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 4,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": null,
+   "fn": 3,
+   "id": 5,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 34,
+   "literal_args": [],
+   "name": "quote",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": 7,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": "core",
+   "detail": "\"{} ({} cents)\"",
+   "fn": 5,
+   "id": 6,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "macro",
+   "line": 46,
+   "literal_args": [],
+   "name": "write!",
+   "paths": [
+    "std::write!"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unknown",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 51,
+   "def_crate": null,
+   "detail": null,
+   "fn": 5,
+   "id": 7,
+   "in_macro": true,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 46,
+   "literal_args": [],
+   "name": "base_price",
+   "paths": [],
+   "recv_type": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": 4,
+   "writes_out": false
+  },
+  {
+   "arg_count": 3,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": null,
+   "fn": 6,
+   "id": 8,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 52,
+   "literal_args": [
+    [
+     0,
+     "str",
+     "unnamed"
+    ],
+    [
+     1,
+     "int",
+     "0"
+    ]
+   ],
+   "name": "new",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 2,
+   "writes_out": false
+  },
+  {
+   "arg_count": 2,
+   "base_kind": null,
+   "col": 28,
+   "def_crate": null,
+   "detail": null,
+   "fn": 7,
+   "id": 9,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 5,
+   "literal_args": [],
+   "name": "final_price",
+   "paths": [],
+   "recv_type": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 24,
+   "def_crate": null,
+   "detail": "*",
+   "fn": 7,
+   "id": 10,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 9,
+   "literal_args": [],
+   "name": "*",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 24,
+   "def_crate": null,
+   "detail": "*",
+   "fn": 7,
+   "id": 11,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 11,
+   "literal_args": [],
+   "name": "*",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 16,
+   "def_crate": null,
+   "detail": "-=",
+   "fn": 7,
+   "id": 12,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 16,
+   "literal_args": [],
+   "name": "-=",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 20,
+   "def_crate": null,
+   "detail": "-=",
+   "fn": 7,
+   "id": 13,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 22,
+   "literal_args": [],
+   "name": "-=",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 23,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 7,
+   "id": 14,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 31,
+   "literal_args": [
+    [
+     0,
+     "str",
+     "VIP"
+    ]
+   ],
+   "name": "starts_with",
+   "paths": [
+    "str::starts_with"
+   ],
+   "recv_type": [
+    "str"
+   ],
+   "resolved": true,
+   "ret_kind": "bool",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": "-=",
+   "fn": 7,
+   "id": 15,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 32,
+   "literal_args": [],
+   "name": "-=",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": "+=",
+   "fn": 7,
+   "id": 16,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "arith",
+   "line": 36,
+   "literal_args": [],
+   "name": "+=",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 9,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 17,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 6,
+   "literal_args": [],
+   "name": "collect",
+   "paths": [
+    "std::iter::traits::iterator::Iterator::collect",
+    "core::iter::traits::iterator::Iterator::collect",
+    "std::iter::Map::collect",
+    "std::iter::adapters::map::Map::collect",
+    "core::iter::adapters::map::Map::collect"
+   ],
+   "recv_type": [
+    "std::iter::Map",
+    "std::iter::adapters::map::Map",
+    "core::iter::adapters::map::Map"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 9,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 18,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 5,
+   "literal_args": [],
+   "name": "map",
+   "paths": [
+    "std::iter::traits::iterator::Iterator::map",
+    "core::iter::traits::iterator::Iterator::map",
+    "std::str::Chars::map",
+    "std::str::iter::Chars::map",
+    "core::str::iter::Chars::map"
+   ],
+   "recv_type": [
+    "std::str::Chars",
+    "std::str::iter::Chars",
+    "core::str::iter::Chars"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 9,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 19,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 4,
+   "literal_args": [],
+   "name": "chars",
+   "paths": [
+    "str::chars"
+   ],
+   "recv_type": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 9,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 8,
+   "id": 20,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 3,
+   "literal_args": [],
+   "name": "to_lowercase",
+   "paths": [
+    "str::to_lowercase"
+   ],
+   "recv_type": [
+    "str"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 22,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 21,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 5,
+   "literal_args": [],
+   "name": "is_ascii_alphanumeric",
+   "paths": [
+    "char::is_ascii_alphanumeric"
+   ],
+   "recv_type": [
+    "char"
+   ],
+   "resolved": true,
+   "ret_kind": "bool",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 10,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 9,
+   "id": 22,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 10,
+   "literal_args": [
+    [
+     0,
+     "str",
+     "\\n"
+    ]
+   ],
+   "name": "join",
+   "paths": [
+    "slice::join"
+   ],
+   "recv_type": [
+    "slice"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 3,
+   "base_kind": null,
+   "col": 15,
+   "def_crate": null,
+   "detail": null,
+   "fn": 10,
+   "id": 23,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 5,
+   "literal_args": [
+    [
+     0,
+     "str",
+     "The Rust Book"
+    ],
+    [
+     1,
+     "int",
+     "3_999"
+    ]
+   ],
+   "name": "new",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 2,
+   "writes_out": false
+  },
+  {
+   "arg_count": 3,
+   "base_kind": null,
+   "col": 21,
+   "def_crate": null,
+   "detail": null,
+   "fn": 10,
+   "id": 24,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 6,
+   "literal_args": [
+    [
+     0,
+     "int",
+     "2"
+    ],
+    [
+     1,
+     "bool",
+     "true"
+    ]
+   ],
+   "name": "total",
+   "paths": [],
+   "recv_type": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": 3,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": "std",
+   "detail": "\"{book}: {price}\\n\"",
+   "fn": 10,
+   "id": 25,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "macro",
+   "line": 7,
+   "literal_args": [],
+   "name": "println!",
+   "paths": [
+    "std::println!"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unknown",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 19,
+   "def_crate": null,
+   "detail": null,
+   "fn": 10,
+   "id": 26,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 8,
+   "literal_args": [],
+   "name": "default",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 6,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": "std",
+   "detail": "\"{fallback}\\n\"",
+   "fn": 10,
+   "id": 27,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "macro",
+   "line": 9,
+   "literal_args": [],
+   "name": "println!",
+   "paths": [
+    "std::println!"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unknown",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  }
+ ],
+ "stats": {
+  "analysis_seconds": 0.0,
+  "analyzed_functions": 11,
+  "expanded_macro_calls": 6,
+  "files": 5,
+  "functions": 11,
+  "load_seconds": 0.0,
+  "macro_calls": 6,
+  "method_calls": 13,
+  "panicked_functions": 0,
+  "path_calls": 6,
+  "resolved_method_calls": 13,
+  "resolved_path_calls": 6
+ },
+ "tool": "codegraph-extract 0.1.0 (rust-analyzer 0.0.358)",
+ "vars": [
+  {
+   "col": 18,
+   "fn": 0,
+   "guards": [],
+   "id": 0,
+   "index": 0,
+   "kind": "param",
+   "line": 21,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Self",
+   "ty_kind": "other",
+   "type_paths": [
+    "generic"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 0,
+   "guards": [],
+   "id": 1,
+   "index": null,
+   "kind": "ret",
+   "line": 21,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 19,
+   "fn": 1,
+   "guards": [],
+   "id": 2,
+   "index": 0,
+   "kind": "param",
+   "line": 23,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Self",
+   "ty_kind": "other",
+   "type_paths": [
+    "generic"
+   ]
+  },
+  {
+   "col": 26,
+   "fn": 1,
+   "guards": [],
+   "id": 3,
+   "index": 1,
+   "kind": "param",
+   "line": 23,
+   "name": "quantity",
+   "param_type_paths": [
+    "u32"
+   ],
+   "ty": "u32",
+   "ty_kind": "int",
+   "type_paths": [
+    "u32"
+   ]
+  },
+  {
+   "col": 41,
+   "fn": 1,
+   "guards": [],
+   "id": 4,
+   "index": 2,
+   "kind": "param",
+   "line": 23,
+   "name": "member",
+   "param_type_paths": [
+    "bool"
+   ],
+   "ty": "bool",
+   "ty_kind": "bool",
+   "type_paths": [
+    "bool"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 1,
+   "guards": [],
+   "id": 5,
+   "index": null,
+   "kind": "ret",
+   "line": 23,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 15,
+   "fn": 2,
+   "guards": [],
+   "id": 6,
+   "index": 0,
+   "kind": "param",
+   "line": 29,
+   "name": "name",
+   "param_type_paths": [
+    "str"
+   ],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 27,
+   "fn": 2,
+   "guards": [],
+   "id": 7,
+   "index": 1,
+   "kind": "param",
+   "line": 29,
+   "name": "price_cents",
+   "param_type_paths": [
+    "u64"
+   ],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 45,
+   "fn": 2,
+   "guards": [],
+   "id": 8,
+   "index": 2,
+   "kind": "param",
+   "line": 29,
+   "name": "category",
+   "param_type_paths": [
+    "sample_rust::models::Category",
+    "sample_rust::Category"
+   ],
+   "ty": "Category",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Category",
+    "sample_rust::Category"
+   ]
+  },
+  {
+   "col": 11,
+   "fn": 2,
+   "guards": [],
+   "id": 9,
+   "index": null,
+   "kind": "ret",
+   "line": 29,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 17,
+   "fn": 3,
+   "guards": [],
+   "id": 10,
+   "index": 0,
+   "kind": "param",
+   "line": 33,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 24,
+   "fn": 3,
+   "guards": [],
+   "id": 11,
+   "index": 1,
+   "kind": "param",
+   "line": 33,
+   "name": "quantity",
+   "param_type_paths": [
+    "u32"
+   ],
+   "ty": "u32",
+   "ty_kind": "int",
+   "type_paths": [
+    "u32"
+   ]
+  },
+  {
+   "col": 39,
+   "fn": 3,
+   "guards": [],
+   "id": 12,
+   "index": 2,
+   "kind": "param",
+   "line": 33,
+   "name": "member",
+   "param_type_paths": [
+    "bool"
+   ],
+   "ty": "bool",
+   "ty_kind": "bool",
+   "type_paths": [
+    "bool"
+   ]
+  },
+  {
+   "col": 53,
+   "fn": 3,
+   "guards": [],
+   "id": 13,
+   "index": 3,
+   "kind": "param",
+   "line": 33,
+   "name": "coupon",
+   "param_type_paths": [
+    "std::option::Option",
+    "core::option::Option"
+   ],
+   "ty": "Option<&str>",
+   "ty_kind": "str",
+   "type_paths": [
+    "std::option::Option",
+    "core::option::Option"
+   ]
+  },
+  {
+   "col": 11,
+   "fn": 3,
+   "guards": [],
+   "id": 14,
+   "index": null,
+   "kind": "ret",
+   "line": 33,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 18,
+   "fn": 4,
+   "guards": [],
+   "id": 15,
+   "index": 0,
+   "kind": "param",
+   "line": 39,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 4,
+   "guards": [],
+   "id": 16,
+   "index": null,
+   "kind": "ret",
+   "line": 39,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 11,
+   "fn": 5,
+   "guards": [],
+   "id": 17,
+   "index": 0,
+   "kind": "param",
+   "line": 45,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 18,
+   "fn": 5,
+   "guards": [],
+   "id": 18,
+   "index": 1,
+   "kind": "param",
+   "line": 45,
+   "name": "f",
+   "param_type_paths": [
+    "std::fmt::Formatter",
+    "core::fmt::Formatter"
+   ],
+   "ty": "&mut Formatter<'_>",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::fmt::Formatter",
+    "core::fmt::Formatter"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 6,
+   "guards": [],
+   "id": 19,
+   "index": null,
+   "kind": "ret",
+   "line": 51,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 13,
+   "fn": 7,
+   "guards": [],
+   "id": 20,
+   "index": 0,
+   "kind": "param",
+   "line": 4,
+   "name": "product",
+   "param_type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ],
+   "ty": "&Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 32,
+   "fn": 7,
+   "guards": [
+    "cmp"
+   ],
+   "id": 21,
+   "index": 1,
+   "kind": "param",
+   "line": 4,
+   "name": "quantity",
+   "param_type_paths": [
+    "u32"
+   ],
+   "ty": "u32",
+   "ty_kind": "int",
+   "type_paths": [
+    "u32"
+   ]
+  },
+  {
+   "col": 47,
+   "fn": 7,
+   "guards": [],
+   "id": 22,
+   "index": 2,
+   "kind": "param",
+   "line": 4,
+   "name": "member",
+   "param_type_paths": [
+    "bool"
+   ],
+   "ty": "bool",
+   "ty_kind": "bool",
+   "type_paths": [
+    "bool"
+   ]
+  },
+  {
+   "col": 61,
+   "fn": 7,
+   "guards": [],
+   "id": 23,
+   "index": 3,
+   "kind": "param",
+   "line": 4,
+   "name": "coupon",
+   "param_type_paths": [
+    "std::option::Option",
+    "core::option::Option"
+   ],
+   "ty": "Option<&str>",
+   "ty_kind": "str",
+   "type_paths": [
+    "std::option::Option",
+    "core::option::Option"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 7,
+   "guards": [],
+   "id": 24,
+   "index": null,
+   "kind": "ret",
+   "line": 4,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 15,
+   "fn": 8,
+   "guards": [],
+   "id": 25,
+   "index": 0,
+   "kind": "param",
+   "line": 2,
+   "name": "name",
+   "param_type_paths": [
+    "str"
+   ],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 8,
+   "guards": [],
+   "id": 26,
+   "index": null,
+   "kind": "ret",
+   "line": 2,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 21,
+   "fn": 9,
+   "guards": [],
+   "id": 27,
+   "index": 0,
+   "kind": "param",
+   "line": 9,
+   "name": "names",
+   "param_type_paths": [
+    "slice"
+   ],
+   "ty": "&[String]",
+   "ty_kind": "other",
+   "type_paths": [
+    "slice"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 9,
+   "guards": [],
+   "id": 28,
+   "index": null,
+   "kind": "ret",
+   "line": 9,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 12,
+   "fn": 7,
+   "guards": [
+    "cmp"
+   ],
+   "id": 29,
+   "index": null,
+   "kind": "local",
+   "line": 5,
+   "name": "total",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 16,
+   "fn": 7,
+   "guards": [
+    "eq",
+    "starts_with"
+   ],
+   "id": 30,
+   "index": null,
+   "kind": "local",
+   "line": 28,
+   "name": "code",
+   "param_type_paths": [],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 14,
+   "fn": 8,
+   "guards": [
+    "is_ascii_alphanumeric"
+   ],
+   "id": 31,
+   "index": null,
+   "kind": "local",
+   "line": 5,
+   "name": "c",
+   "param_type_paths": [],
+   "ty": "char",
+   "ty_kind": "char",
+   "type_paths": [
+    "char"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 10,
+   "guards": [],
+   "id": 32,
+   "index": null,
+   "kind": "local",
+   "line": 5,
+   "name": "book",
+   "param_type_paths": [],
+   "ty": "Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 10,
+   "guards": [],
+   "id": 33,
+   "index": null,
+   "kind": "local",
+   "line": 6,
+   "name": "price",
+   "param_type_paths": [],
+   "ty": "u64",
+   "ty_kind": "int",
+   "type_paths": [
+    "u64"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 10,
+   "guards": [],
+   "id": 34,
+   "index": null,
+   "kind": "local",
+   "line": 8,
+   "name": "fallback",
+   "param_type_paths": [],
+   "ty": "Product",
+   "ty_kind": "other",
+   "type_paths": [
+    "sample_rust::models::Product",
+    "sample_rust::Product"
+   ]
+  }
+ ],
+ "warnings": []
+}

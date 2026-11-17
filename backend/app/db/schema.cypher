@@ -27,3 +27,8 @@ CREATE INDEX unsafe_project IF NOT EXISTS FOR (u:Unsafe) ON (u.project_id);
 CREATE INDEX call_project IF NOT EXISTS FOR (c:Call) ON (c.project_id, c.callee_path);
 CREATE INDEX literal_project IF NOT EXISTS FOR (l:Literal) ON (l.project_id);
 CREATE INDEX function_entry_distance IF NOT EXISTS FOR (f:Function) ON (f.project_id, f.entry_distance);
+
+// Data flow (phase 3): parameters, locals and return values, connected by FLOWS_TO / PASSES / RETURNS_TO
+CREATE CONSTRAINT var_id IF NOT EXISTS FOR (v:Var) REQUIRE v.id IS UNIQUE;
+CREATE INDEX var_project IF NOT EXISTS FOR (v:Var) ON (v.project_id, v.subkind);
+CREATE INDEX var_param_type IF NOT EXISTS FOR (v:Var) ON (v.project_id, v.param_type);

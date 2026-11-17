@@ -3,7 +3,7 @@
 #
 # Bump `version` whenever an entry is added, removed or changed. Evaluation runs record it, and
 # the loader also reports a sha256 digest over all files so an unbumped edit is still detectable.
-version: "0.2.0"
+version: "0.3.0"
 
 files:
   - sources.yaml
@@ -21,4 +21,7 @@ files:
 #   std::println!                  a macro
 #   md5 (kind: crate)              every item of that crate
 # `args` lists the 0-based argument positions that matter (receiver excluded); `receiver: true`
-# means the receiver itself matters, e.g. a tainted PathBuf passed to `.push`.
+# means the receiver itself matters. With the rust-analyzer extractor a called path is the
+# callee's real one (`std::option::Option::unwrap`); `?::m` entries match it by its last segment,
+# and an item is matched under any of the names it goes by (definition path, public re-export,
+# `crate::Type::method`).

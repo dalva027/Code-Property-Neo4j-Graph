@@ -1,0 +1,11 @@
+#!/bin/sh
+# Run the codegraph-extract binary that scripts/extractor-build left in the target volume, with the
+# repository mounted at its own path. For development; the released path is the Docker image.
+# The container is capped at CODEGRAPH_EXTRACT_MEMORY (default 2g, see codegraph-extract-docker).
+set -eu
+ROOT=${CODEGRAPH_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
+exec docker run --rm -i --memory "${CODEGRAPH_EXTRACT_MEMORY:-2g}" -v "$ROOT:$ROOT" -w "$PWD" \
+  -v codegraph-cargo-registry:/usr/local/cargo/registry \
+  -v codegraph-rustup:/usr/local/rustup \
+  -v codegraph-extract-target:/target:ro \
+  rust:1-slim-bookworm /target/release/codegraph-extract "$@"

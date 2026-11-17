@@ -1,0 +1,2798 @@
+{
+ "crates": [
+  {
+   "name": "flows",
+   "root_file": "src/lib.rs"
+  }
+ ],
+ "dispatch": [
+  [
+   13,
+   14
+  ]
+ ],
+ "files": [
+  {
+   "crate_name": "flows",
+   "id": 0,
+   "path": "src/lib.rs",
+   "symbols": [
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 6,
+     "name": "source"
+    },
+    {
+     "col": 3,
+     "kind": "fn",
+     "line": 10,
+     "name": "sink"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 14,
+     "name": "let_chain"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 21,
+     "name": "method_chain"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 26,
+     "name": "through_format"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 32,
+     "name": "through_format_args"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 38,
+     "name": "through_try"
+    },
+    {
+     "col": 7,
+     "kind": "struct",
+     "line": 45,
+     "name": "Job"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 50,
+     "name": "struct_literal"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 57,
+     "name": "closure_param"
+    },
+    {
+     "col": 3,
+     "kind": "fn",
+     "line": 65,
+     "name": "pass_one"
+    },
+    {
+     "col": 3,
+     "kind": "fn",
+     "line": 69,
+     "name": "pass_two"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 73,
+     "name": "one_call"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 77,
+     "name": "two_calls"
+    },
+    {
+     "col": 10,
+     "kind": "trait",
+     "line": 81,
+     "name": "Runner"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 82,
+     "name": "run"
+    },
+    {
+     "col": 11,
+     "kind": "struct",
+     "line": 85,
+     "name": "Shell"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 88,
+     "name": "run"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 93,
+     "name": "dispatch"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 97,
+     "name": "out_param"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 109,
+     "name": "through_macro"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 114,
+     "name": "guarded"
+    },
+    {
+     "col": 7,
+     "kind": "fn",
+     "line": 121,
+     "name": "untainted"
+    }
+   ]
+  }
+ ],
+ "flows": [
+  {
+   "from": "v7",
+   "kind": "flow",
+   "to": "v9",
+   "via": "dispatch"
+  },
+  {
+   "from": "v8",
+   "kind": "flow",
+   "to": "v10",
+   "via": "dispatch"
+  },
+  {
+   "from": "s2",
+   "kind": "flow",
+   "to": "s1",
+   "via": "recv"
+  },
+  {
+   "from": "s1",
+   "kind": "flow",
+   "to": "s0",
+   "via": "recv"
+  },
+  {
+   "from": "s0",
+   "kind": "flow",
+   "to": "v0",
+   "via": "return"
+  },
+  {
+   "from": "v1",
+   "kind": "flow",
+   "to": "s4",
+   "via": "arg:0"
+  },
+  {
+   "from": "s4",
+   "kind": "flow",
+   "to": "s3",
+   "via": "recv"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s5",
+   "via": "return"
+  },
+  {
+   "from": "s5",
+   "kind": "flow",
+   "to": "v12",
+   "via": "assign"
+  },
+  {
+   "from": "v12",
+   "kind": "flow",
+   "to": "v13",
+   "via": "assign"
+  },
+  {
+   "from": "v13",
+   "kind": "flow",
+   "to": "v14",
+   "via": "assign"
+  },
+  {
+   "from": "v14",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s7",
+   "via": "return"
+  },
+  {
+   "from": "s7",
+   "kind": "flow",
+   "to": "v15",
+   "via": "assign"
+  },
+  {
+   "from": "v15",
+   "kind": "flow",
+   "to": "s11",
+   "via": "recv"
+  },
+  {
+   "from": "s11",
+   "kind": "flow",
+   "to": "s10",
+   "via": "recv"
+  },
+  {
+   "from": "s10",
+   "kind": "flow",
+   "to": "s9",
+   "via": "recv"
+  },
+  {
+   "from": "s9",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s12",
+   "via": "return"
+  },
+  {
+   "from": "s12",
+   "kind": "flow",
+   "to": "v16",
+   "via": "assign"
+  },
+  {
+   "from": "v16",
+   "kind": "flow",
+   "to": "s13",
+   "via": "macro"
+  },
+  {
+   "from": "s13",
+   "kind": "flow",
+   "to": "v17",
+   "via": "assign"
+  },
+  {
+   "from": "v17",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s15",
+   "via": "return"
+  },
+  {
+   "from": "s15",
+   "kind": "flow",
+   "to": "v18",
+   "via": "assign"
+  },
+  {
+   "from": "v18",
+   "kind": "flow",
+   "to": "s16",
+   "via": "macro"
+  },
+  {
+   "from": "s16",
+   "kind": "flow",
+   "to": "v19",
+   "via": "assign"
+  },
+  {
+   "from": "v19",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s18",
+   "via": "return"
+  },
+  {
+   "from": "s18",
+   "kind": "flow",
+   "to": "v20",
+   "via": "assign"
+  },
+  {
+   "from": "v20",
+   "kind": "flow",
+   "to": "s19",
+   "via": "recv"
+  },
+  {
+   "from": "s19",
+   "kind": "flow",
+   "to": "v21",
+   "via": "assign"
+  },
+  {
+   "from": "v21",
+   "kind": "flow",
+   "to": "s21",
+   "via": "recv"
+  },
+  {
+   "from": "s21",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s22",
+   "via": "return"
+  },
+  {
+   "from": "s22",
+   "kind": "flow",
+   "to": "v22",
+   "via": "assign"
+  },
+  {
+   "from": "v22",
+   "kind": "flow",
+   "to": "s23",
+   "via": "field:name"
+  },
+  {
+   "from": "s23",
+   "kind": "flow",
+   "to": "v23",
+   "via": "assign"
+  },
+  {
+   "from": "v23",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v23",
+   "kind": "flow",
+   "to": "v2",
+   "via": "return"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s25",
+   "via": "return"
+  },
+  {
+   "from": "s25",
+   "kind": "flow",
+   "to": "v24",
+   "via": "assign"
+  },
+  {
+   "from": "v24",
+   "kind": "flow",
+   "to": "s28",
+   "via": "recv"
+  },
+  {
+   "from": "s28",
+   "kind": "flow",
+   "to": "v25",
+   "via": "closure"
+  },
+  {
+   "from": "v25",
+   "kind": "flow",
+   "to": "s29",
+   "via": "recv"
+  },
+  {
+   "from": "s28",
+   "kind": "flow",
+   "to": "s27",
+   "via": "recv"
+  },
+  {
+   "from": "s29",
+   "kind": "flow",
+   "to": "s27",
+   "via": "arg:0"
+  },
+  {
+   "from": "s27",
+   "kind": "flow",
+   "to": "s26",
+   "via": "recv"
+  },
+  {
+   "from": "s26",
+   "kind": "flow",
+   "to": "v26",
+   "via": "assign"
+  },
+  {
+   "from": "v26",
+   "kind": "flow",
+   "to": "v27",
+   "via": "for"
+  },
+  {
+   "from": "v27",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v3",
+   "kind": "flow",
+   "to": "v4",
+   "via": "return"
+  },
+  {
+   "from": "v5",
+   "kind": "pass",
+   "to": "v3",
+   "via": "arg:0"
+  },
+  {
+   "from": "v4",
+   "kind": "ret",
+   "to": "s31",
+   "via": "return"
+  },
+  {
+   "from": "s31",
+   "kind": "flow",
+   "to": "v6",
+   "via": "return"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s34",
+   "via": "return"
+  },
+  {
+   "from": "s34",
+   "kind": "pass",
+   "to": "v3",
+   "via": "arg:0"
+  },
+  {
+   "from": "v4",
+   "kind": "ret",
+   "to": "s33",
+   "via": "return"
+  },
+  {
+   "from": "s33",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s37",
+   "via": "return"
+  },
+  {
+   "from": "s37",
+   "kind": "pass",
+   "to": "v5",
+   "via": "arg:0"
+  },
+  {
+   "from": "v6",
+   "kind": "ret",
+   "to": "s36",
+   "via": "return"
+  },
+  {
+   "from": "s36",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v10",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s40",
+   "via": "return"
+  },
+  {
+   "from": "v11",
+   "kind": "pass",
+   "to": "v7",
+   "via": "arg:0"
+  },
+  {
+   "from": "s40",
+   "kind": "pass",
+   "to": "v8",
+   "via": "arg:1"
+  },
+  {
+   "from": "s41",
+   "kind": "flow",
+   "to": "v28",
+   "via": "assign"
+  },
+  {
+   "from": "s43",
+   "kind": "flow",
+   "to": "s42",
+   "via": "recv"
+  },
+  {
+   "from": "v28",
+   "kind": "flow",
+   "to": "s42",
+   "via": "arg:0"
+  },
+  {
+   "from": "s42",
+   "kind": "flow",
+   "to": "v28",
+   "via": "out"
+  },
+  {
+   "from": "v28",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s45",
+   "via": "return"
+  },
+  {
+   "from": "s45",
+   "kind": "flow",
+   "to": "v29",
+   "via": "assign"
+  },
+  {
+   "from": "v29",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  },
+  {
+   "from": "s47",
+   "kind": "flow",
+   "to": "s46",
+   "via": "macro"
+  },
+  {
+   "from": "v0",
+   "kind": "ret",
+   "to": "s48",
+   "via": "return"
+  },
+  {
+   "from": "s48",
+   "kind": "flow",
+   "to": "v30",
+   "via": "assign"
+  },
+  {
+   "from": "v30",
+   "kind": "flow",
+   "to": "s49",
+   "via": "recv"
+  },
+  {
+   "from": "v30",
+   "kind": "pass",
+   "to": "v1",
+   "via": "arg:0"
+  }
+ ],
+ "fns": [
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 0,
+   "line": 6,
+   "name": "source",
+   "params": [],
+   "ret_kind": "other",
+   "ret_type": "String",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 3,
+   "file": 0,
+   "has_body": true,
+   "id": 1,
+   "line": 10,
+   "name": "sink",
+   "params": [
+    {
+     "index": 0,
+     "name": "command",
+     "ty": "&str",
+     "type_paths": [
+      "str"
+     ]
+    }
+   ],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 2,
+   "line": 14,
+   "name": "let_chain",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 3,
+   "line": 21,
+   "name": "method_chain",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 4,
+   "line": 26,
+   "name": "through_format",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 5,
+   "line": 32,
+   "name": "through_format_args",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 6,
+   "line": 38,
+   "name": "through_try",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "Result<(), ParseIntError>",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 7,
+   "line": 50,
+   "name": "struct_literal",
+   "params": [],
+   "ret_kind": "int",
+   "ret_type": "u32",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 8,
+   "line": 57,
+   "name": "closure_param",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 3,
+   "file": 0,
+   "has_body": true,
+   "id": 9,
+   "line": 65,
+   "name": "pass_one",
+   "params": [
+    {
+     "index": 0,
+     "name": "value",
+     "ty": "String",
+     "type_paths": [
+      "std::string::String",
+      "alloc::string::String"
+     ]
+    }
+   ],
+   "ret_kind": "other",
+   "ret_type": "String",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 3,
+   "file": 0,
+   "has_body": true,
+   "id": 10,
+   "line": 69,
+   "name": "pass_two",
+   "params": [
+    {
+     "index": 0,
+     "name": "value",
+     "ty": "String",
+     "type_paths": [
+      "std::string::String",
+      "alloc::string::String"
+     ]
+    }
+   ],
+   "ret_kind": "other",
+   "ret_type": "String",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 11,
+   "line": 73,
+   "name": "one_call",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 12,
+   "line": 77,
+   "name": "two_calls",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": false,
+   "id": 13,
+   "line": 82,
+   "name": "run",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    },
+    {
+     "index": 1,
+     "name": "command",
+     "ty": "&str",
+     "type_paths": [
+      "str"
+     ]
+    }
+   ],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 14,
+   "line": 88,
+   "name": "run",
+   "params": [
+    {
+     "index": 0,
+     "name": "self",
+     "ty": "&self",
+     "type_paths": []
+    },
+    {
+     "index": 1,
+     "name": "command",
+     "ty": "&str",
+     "type_paths": [
+      "str"
+     ]
+    }
+   ],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": "shared"
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 15,
+   "line": 93,
+   "name": "dispatch",
+   "params": [
+    {
+     "index": 0,
+     "name": "runner",
+     "ty": "&dyn Runner",
+     "type_paths": [
+      "flows::Runner"
+     ]
+    }
+   ],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 16,
+   "line": 97,
+   "name": "out_param",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 17,
+   "line": 109,
+   "name": "through_macro",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 18,
+   "line": 114,
+   "name": "guarded",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  },
+  {
+   "analyzed": true,
+   "col": 7,
+   "file": 0,
+   "has_body": true,
+   "id": 19,
+   "line": 121,
+   "name": "untainted",
+   "params": [],
+   "ret_kind": "unit",
+   "ret_type": "()",
+   "self_access": null
+  }
+ ],
+ "manifest": "Cargo.toml",
+ "refs": [],
+ "root": "",
+ "schema_version": 1,
+ "sites": [
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 28,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 0,
+   "id": 0,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 7,
+   "literal_args": [],
+   "name": "unwrap_or_default",
+   "paths": [
+    "std::option::Option::unwrap_or_default",
+    "core::option::Option::unwrap_or_default"
+   ],
+   "recv_type": [
+    "std::option::Option",
+    "core::option::Option"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 21,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 0,
+   "id": 1,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 7,
+   "literal_args": [
+    [
+     0,
+     "int",
+     "1"
+    ]
+   ],
+   "name": "nth",
+   "paths": [
+    "std::iter::traits::iterator::Iterator::nth",
+    "core::iter::traits::iterator::Iterator::nth",
+    "std::env::Args::nth"
+   ],
+   "recv_type": [
+    "std::env::Args"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": "std",
+   "detail": null,
+   "fn": 0,
+   "id": 2,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 7,
+   "literal_args": [],
+   "name": "args",
+   "paths": [
+    "std::env::args"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 34,
+   "def_crate": "std",
+   "detail": null,
+   "fn": 1,
+   "id": 3,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 11,
+   "literal_args": [],
+   "name": "status",
+   "paths": [
+    "std::process::Command::status"
+   ],
+   "recv_type": [
+    "std::process::Command"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": "std",
+   "detail": null,
+   "fn": 1,
+   "id": 4,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 11,
+   "literal_args": [],
+   "name": "new",
+   "paths": [
+    "std::process::Command::new"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 2,
+   "id": 5,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 15,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 2,
+   "id": 6,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 18,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 3,
+   "id": 7,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 22,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 3,
+   "id": 8,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 23,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 33,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 3,
+   "id": 9,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 23,
+   "literal_args": [],
+   "name": "as_str",
+   "paths": [
+    "std::string::String::as_str",
+    "alloc::string::String::as_str"
+   ],
+   "recv_type": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "resolved": true,
+   "ret_kind": "str",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 18,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 3,
+   "id": 10,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 23,
+   "literal_args": [],
+   "name": "to_lowercase",
+   "paths": [
+    "str::to_lowercase"
+   ],
+   "recv_type": [
+    "str"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 11,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 3,
+   "id": 11,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 23,
+   "literal_args": [],
+   "name": "trim",
+   "paths": [
+    "str::trim"
+   ],
+   "recv_type": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "resolved": true,
+   "ret_kind": "str",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 4,
+   "id": 12,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 27,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 15,
+   "def_crate": "alloc",
+   "detail": "\"run {a} now\"",
+   "fn": 4,
+   "id": 13,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "macro",
+   "line": 28,
+   "literal_args": [],
+   "name": "format!",
+   "paths": [
+    "std::format!"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unknown",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 4,
+   "id": 14,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 29,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 5,
+   "id": 15,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 33,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 15,
+   "def_crate": "alloc",
+   "detail": "\"run {} now\"",
+   "fn": 5,
+   "id": 16,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "macro",
+   "line": 34,
+   "literal_args": [],
+   "name": "format!",
+   "paths": [
+    "std::format!"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unknown",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 5,
+   "id": 17,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 35,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 6,
+   "id": 18,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 39,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 23,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 6,
+   "id": 19,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 40,
+   "literal_args": [],
+   "name": "parse",
+   "paths": [
+    "str::parse"
+   ],
+   "recv_type": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 6,
+   "id": 20,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 41,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 16,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 6,
+   "id": 21,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 41,
+   "literal_args": [],
+   "name": "to_string",
+   "paths": [
+    "generic::to_string",
+    "std::string::ToString::to_string",
+    "alloc::string::ToString::to_string"
+   ],
+   "recv_type": [
+    "u32"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 7,
+   "id": 22,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 51,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 14,
+   "def_crate": null,
+   "detail": "Job",
+   "fn": 7,
+   "id": 23,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "struct",
+   "line": 52,
+   "literal_args": [],
+   "name": "Job",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 7,
+   "id": 24,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 53,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 8,
+   "id": 25,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 58,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 74,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 26,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 59,
+   "literal_args": [],
+   "name": "collect",
+   "paths": [
+    "std::iter::traits::iterator::Iterator::collect",
+    "core::iter::traits::iterator::Iterator::collect",
+    "std::iter::Map::collect",
+    "std::iter::adapters::map::Map::collect",
+    "core::iter::adapters::map::Map::collect"
+   ],
+   "recv_type": [
+    "std::iter::Map",
+    "std::iter::adapters::map::Map",
+    "core::iter::adapters::map::Map"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 42,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 27,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 59,
+   "literal_args": [],
+   "name": "map",
+   "paths": [
+    "std::iter::traits::iterator::Iterator::map",
+    "core::iter::traits::iterator::Iterator::map",
+    "std::str::Split::map",
+    "std::str::iter::Split::map",
+    "core::str::iter::Split::map"
+   ],
+   "recv_type": [
+    "std::str::Split",
+    "std::str::iter::Split",
+    "core::str::iter::Split"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 31,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 8,
+   "id": 28,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 59,
+   "literal_args": [
+    [
+     0,
+     "char",
+     "' '"
+    ]
+   ],
+   "name": "split",
+   "paths": [
+    "str::split"
+   ],
+   "recv_type": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 58,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 8,
+   "id": 29,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 59,
+   "literal_args": [],
+   "name": "to_uppercase",
+   "paths": [
+    "str::to_uppercase"
+   ],
+   "recv_type": [
+    "str"
+   ],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": null,
+   "fn": 8,
+   "id": 30,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 61,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 10,
+   "id": 31,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 70,
+   "literal_args": [],
+   "name": "pass_one",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 9,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 11,
+   "id": 32,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 74,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 10,
+   "def_crate": null,
+   "detail": null,
+   "fn": 11,
+   "id": 33,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 74,
+   "literal_args": [],
+   "name": "pass_one",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 9,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 19,
+   "def_crate": null,
+   "detail": null,
+   "fn": 11,
+   "id": 34,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 74,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 12,
+   "id": 35,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 78,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 10,
+   "def_crate": null,
+   "detail": null,
+   "fn": 12,
+   "id": 36,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 78,
+   "literal_args": [],
+   "name": "pass_two",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 10,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 19,
+   "def_crate": null,
+   "detail": null,
+   "fn": 12,
+   "id": 37,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 78,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": null,
+   "fn": 14,
+   "id": 38,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 89,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 11,
+   "def_crate": null,
+   "detail": null,
+   "fn": 15,
+   "id": 39,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 94,
+   "literal_args": [],
+   "name": "run",
+   "paths": [],
+   "recv_type": [
+    "flows::Runner"
+   ],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 13,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 16,
+   "def_crate": null,
+   "detail": null,
+   "fn": 15,
+   "id": 40,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 94,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 19,
+   "def_crate": "alloc",
+   "detail": null,
+   "fn": 16,
+   "id": 41,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 98,
+   "literal_args": [],
+   "name": "new",
+   "paths": [
+    "std::string::String::new",
+    "alloc::string::String::new"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 29,
+   "def_crate": "std",
+   "detail": null,
+   "fn": 16,
+   "id": 42,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 99,
+   "literal_args": [],
+   "name": "read_line",
+   "paths": [
+    "std::io::Stdin::read_line",
+    "std::io::stdio::Stdin::read_line"
+   ],
+   "recv_type": [
+    "std::io::Stdin",
+    "std::io::stdio::Stdin"
+   ],
+   "resolved": true,
+   "ret_kind": "int",
+   "seq": 0,
+   "target": null,
+   "writes_out": true
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": "std",
+   "detail": null,
+   "fn": 16,
+   "id": 43,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 99,
+   "literal_args": [],
+   "name": "stdin",
+   "paths": [
+    "std::io::stdin",
+    "std::io::stdio::stdin"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 16,
+   "id": 44,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 100,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 17,
+   "id": 45,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 110,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": "flows",
+   "detail": null,
+   "fn": 17,
+   "id": 46,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "macro",
+   "line": 111,
+   "literal_args": [],
+   "name": "run!",
+   "paths": [
+    "flows::run!"
+   ],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unknown",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 17,
+   "id": 47,
+   "in_macro": true,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 111,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 1,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 0,
+   "base_kind": null,
+   "col": 12,
+   "def_crate": null,
+   "detail": null,
+   "fn": 18,
+   "id": 48,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 115,
+   "literal_args": [],
+   "name": "source",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "other",
+   "seq": 0,
+   "target": 0,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 9,
+   "def_crate": "core",
+   "detail": null,
+   "fn": 18,
+   "id": 49,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "method",
+   "line": 116,
+   "literal_args": [
+    [
+     0,
+     "str",
+     "safe-"
+    ]
+   ],
+   "name": "starts_with",
+   "paths": [
+    "str::starts_with"
+   ],
+   "recv_type": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "resolved": true,
+   "ret_kind": "bool",
+   "seq": 0,
+   "target": null,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 8,
+   "def_crate": null,
+   "detail": null,
+   "fn": 18,
+   "id": 50,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 117,
+   "literal_args": [],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  },
+  {
+   "arg_count": 1,
+   "base_kind": null,
+   "col": 4,
+   "def_crate": null,
+   "detail": null,
+   "fn": 19,
+   "id": 51,
+   "in_macro": false,
+   "in_unsafe": false,
+   "kind": "call",
+   "line": 122,
+   "literal_args": [
+    [
+     0,
+     "str",
+     "ls"
+    ]
+   ],
+   "name": "sink",
+   "paths": [],
+   "recv_type": [],
+   "resolved": true,
+   "ret_kind": "unit",
+   "seq": 0,
+   "target": 1,
+   "writes_out": false
+  }
+ ],
+ "stats": {
+  "analysis_seconds": 0.0,
+  "analyzed_functions": 20,
+  "expanded_macro_calls": 5,
+  "files": 1,
+  "functions": 20,
+  "load_seconds": 0.0,
+  "macro_calls": 5,
+  "method_calls": 15,
+  "panicked_functions": 0,
+  "path_calls": 37,
+  "resolved_method_calls": 15,
+  "resolved_path_calls": 37
+ },
+ "tool": "codegraph-extract 0.1.0 (rust-analyzer 0.0.358)",
+ "vars": [
+  {
+   "col": 7,
+   "fn": 0,
+   "guards": [],
+   "id": 0,
+   "index": null,
+   "kind": "ret",
+   "line": 6,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 1,
+   "guards": [],
+   "id": 1,
+   "index": 0,
+   "kind": "param",
+   "line": 10,
+   "name": "command",
+   "param_type_paths": [
+    "str"
+   ],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 7,
+   "fn": 7,
+   "guards": [],
+   "id": 2,
+   "index": null,
+   "kind": "ret",
+   "line": 50,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "u32",
+   "ty_kind": "int",
+   "type_paths": [
+    "u32"
+   ]
+  },
+  {
+   "col": 12,
+   "fn": 9,
+   "guards": [],
+   "id": 3,
+   "index": 0,
+   "kind": "param",
+   "line": 65,
+   "name": "value",
+   "param_type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 3,
+   "fn": 9,
+   "guards": [],
+   "id": 4,
+   "index": null,
+   "kind": "ret",
+   "line": 65,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 12,
+   "fn": 10,
+   "guards": [],
+   "id": 5,
+   "index": 0,
+   "kind": "param",
+   "line": 69,
+   "name": "value",
+   "param_type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 3,
+   "fn": 10,
+   "guards": [],
+   "id": 6,
+   "index": null,
+   "kind": "ret",
+   "line": 69,
+   "name": "<return>",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 11,
+   "fn": 13,
+   "guards": [],
+   "id": 7,
+   "index": 0,
+   "kind": "param",
+   "line": 82,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Self",
+   "ty_kind": "other",
+   "type_paths": [
+    "generic"
+   ]
+  },
+  {
+   "col": 18,
+   "fn": 13,
+   "guards": [],
+   "id": 8,
+   "index": 1,
+   "kind": "param",
+   "line": 82,
+   "name": "command",
+   "param_type_paths": [
+    "str"
+   ],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 11,
+   "fn": 14,
+   "guards": [],
+   "id": 9,
+   "index": 0,
+   "kind": "param",
+   "line": 88,
+   "name": "self",
+   "param_type_paths": [],
+   "ty": "&Shell",
+   "ty_kind": "other",
+   "type_paths": [
+    "flows::Shell"
+   ]
+  },
+  {
+   "col": 18,
+   "fn": 14,
+   "guards": [],
+   "id": 10,
+   "index": 1,
+   "kind": "param",
+   "line": 88,
+   "name": "command",
+   "param_type_paths": [
+    "str"
+   ],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 16,
+   "fn": 15,
+   "guards": [],
+   "id": 11,
+   "index": 0,
+   "kind": "param",
+   "line": 93,
+   "name": "runner",
+   "param_type_paths": [
+    "flows::Runner"
+   ],
+   "ty": "&(dyn Runner + 'static)",
+   "ty_kind": "other",
+   "type_paths": [
+    "flows::Runner"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 2,
+   "guards": [],
+   "id": 12,
+   "index": null,
+   "kind": "local",
+   "line": 15,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 2,
+   "guards": [],
+   "id": 13,
+   "index": null,
+   "kind": "local",
+   "line": 16,
+   "name": "b",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 2,
+   "guards": [],
+   "id": 14,
+   "index": null,
+   "kind": "local",
+   "line": 17,
+   "name": "c",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 3,
+   "guards": [],
+   "id": 15,
+   "index": null,
+   "kind": "local",
+   "line": 22,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 4,
+   "guards": [],
+   "id": 16,
+   "index": null,
+   "kind": "local",
+   "line": 27,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 4,
+   "guards": [],
+   "id": 17,
+   "index": null,
+   "kind": "local",
+   "line": 28,
+   "name": "line",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 5,
+   "guards": [],
+   "id": 18,
+   "index": null,
+   "kind": "local",
+   "line": 33,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 5,
+   "guards": [],
+   "id": 19,
+   "index": null,
+   "kind": "local",
+   "line": 34,
+   "name": "line",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 6,
+   "guards": [],
+   "id": 20,
+   "index": null,
+   "kind": "local",
+   "line": 39,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 6,
+   "guards": [],
+   "id": 21,
+   "index": null,
+   "kind": "local",
+   "line": 40,
+   "name": "count",
+   "param_type_paths": [],
+   "ty": "u32",
+   "ty_kind": "int",
+   "type_paths": [
+    "u32"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 7,
+   "guards": [],
+   "id": 22,
+   "index": null,
+   "kind": "local",
+   "line": 51,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 7,
+   "guards": [],
+   "id": 23,
+   "index": null,
+   "kind": "local",
+   "line": 52,
+   "name": "job",
+   "param_type_paths": [],
+   "ty": "Job",
+   "ty_kind": "other",
+   "type_paths": [
+    "flows::Job"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 8,
+   "guards": [],
+   "id": 24,
+   "index": null,
+   "kind": "local",
+   "line": 58,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 47,
+   "fn": 8,
+   "guards": [],
+   "id": 25,
+   "index": null,
+   "kind": "local",
+   "line": 59,
+   "name": "part",
+   "param_type_paths": [],
+   "ty": "&str",
+   "ty_kind": "str",
+   "type_paths": [
+    "str"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 8,
+   "guards": [],
+   "id": 26,
+   "index": null,
+   "kind": "local",
+   "line": 59,
+   "name": "parts",
+   "param_type_paths": [],
+   "ty": "Vec<String, Global>",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::vec::Vec",
+    "alloc::vec::Vec"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 8,
+   "guards": [],
+   "id": 27,
+   "index": null,
+   "kind": "local",
+   "line": 60,
+   "name": "part",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 12,
+   "fn": 16,
+   "guards": [],
+   "id": 28,
+   "index": null,
+   "kind": "local",
+   "line": 98,
+   "name": "line",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 17,
+   "guards": [],
+   "id": 29,
+   "index": null,
+   "kind": "local",
+   "line": 110,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  },
+  {
+   "col": 8,
+   "fn": 18,
+   "guards": [
+    "starts_with"
+   ],
+   "id": 30,
+   "index": null,
+   "kind": "local",
+   "line": 115,
+   "name": "a",
+   "param_type_paths": [],
+   "ty": "String",
+   "ty_kind": "other",
+   "type_paths": [
+    "std::string::String",
+    "alloc::string::String"
+   ]
+  }
+ ],
+ "warnings": []
+}

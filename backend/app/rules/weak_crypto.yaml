@@ -1,4 +1,4 @@
-# Cryptography misuse patterns for rules C1, C3, C5, C6.
+# Cryptography misuse patterns for rules C1, C2, C3, C5, C6, C7.
 weak_crypto:
   weak_hash:            # C1, CWE-327/328
     - {path: "md5", kind: crate}
@@ -33,3 +33,20 @@ weak_crypto:
     - {path: "argon2::Params::new", args: [0, 1], min: {0: 19456, 1: 2}, note: "m_cost KiB, t_cost"}
     - {path: "scrypt::Params::new", args: [0], min: {0: 15}, note: "log_n"}
     - {path: "bcrypt::{hash,hash_with_salt}", args: [1], min: {1: 10}, note: "cost"}
+  fast_hash:            # C2, CWE-916: general-purpose digests, wrong for passwords however strong
+    - {path: "md5", kind: crate}
+    - {path: "sha1", kind: crate}
+    - {path: "sha2", kind: crate}
+    - {path: "sha3", kind: crate}
+    - {path: "blake2", kind: crate}
+    - {path: "blake3", kind: crate}
+    - {path: "digest::Digest::{digest,update,chain_update,new_with_prefix}"}
+    - {path: "ring::digest::digest", args: [1]}
+    - {path: "openssl::hash::hash", args: [1]}
+    - {path: "openssl::sha::{sha1,sha256,sha512}", args: [0]}
+  nonce:                # C6, CWE-323: a nonce built from a constant
+    - {path: "aes_gcm::Nonce::from_slice", args: [0]}
+    - {path: "chacha20poly1305::{Nonce,XNonce}::from_slice", args: [0]}
+    - {path: "aes_gcm_siv::Nonce::from_slice", args: [0]}
+    - {path: "*::Nonce::from_slice", args: [0]}
+    - {path: "ring::aead::Nonce::assume_unique_for_key", args: [0]}

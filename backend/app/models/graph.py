@@ -18,6 +18,8 @@ class NodeKind(str, Enum):
     unsafe = "unsafe"             # an `unsafe` block, fn, impl or trait span
     call = "call"                 # one call site of interest: an index/arith op or a catalogue match
     literal = "literal"           # a string literal that looks like a secret (redacted; value never stored)
+    # Data flow (docs/build-plan.md section 5.4), produced by the rust-analyzer extractor
+    var = "var"                   # a parameter, local or return value of a function
 
 
 class EdgeKind(str, Enum):
@@ -30,6 +32,10 @@ class EdgeKind(str, Enum):
     has_call = "HAS_CALL"         # (Function)->(Call)
     targets = "TARGETS"           # (Call)->(External)
     has_literal = "HAS_LITERAL"   # (Function|File)->(Literal)
+    declares = "DECLARES"         # (Function)->(Var)
+    flows_to = "FLOWS_TO"         # (Var|Call)->(Var|Call) inside one function {via, vias}
+    passes = "PASSES"             # (Var|Call)->(Var param of the callee) {via: "arg:<i>"}
+    returns_to = "RETURNS_TO"     # (Var ret of the callee)->(Call)
     # Dependency graph (app/graph/deps.py)
     depends_on = "DEPENDS_ON"     # (Crate)->(Crate) {kind}
     affected_by = "AFFECTED_BY"   # (Crate)->(Advisory) {kind, functions}
@@ -40,7 +46,10 @@ class EdgeKind(str, Enum):
 
 # Edges the code graph builder emits; the rest come from the dependency scan.
 CODE_EDGE_KINDS = (EdgeKind.contains, EdgeKind.imports, EdgeKind.calls, EdgeKind.inherits, EdgeKind.implements,
-                   EdgeKind.references, EdgeKind.has_call, EdgeKind.targets, EdgeKind.has_literal)
+                   EdgeKind.references, EdgeKind.has_call, EdgeKind.targets, EdgeKind.has_literal,
+                   EdgeKind.declares, EdgeKind.flows_to, EdgeKind.passes, EdgeKind.returns_to)
+# The edges taint paths run over.
+FLOW_EDGE_KINDS = (EdgeKind.flows_to, EdgeKind.passes, EdgeKind.returns_to)
 
 
 class GraphNode(BaseModel):

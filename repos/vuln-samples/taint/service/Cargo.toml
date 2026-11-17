@@ -1,0 +1,12 @@
+[package]
+name = "taint-service"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Declared so rust-analyzer can resolve the framework types; the crate is analyzed, not built.
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio"] }
+reqwest = { version = "0.12", default-features = false }

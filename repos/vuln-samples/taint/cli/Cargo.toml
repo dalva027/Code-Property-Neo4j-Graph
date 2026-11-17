@@ -1,0 +1,13 @@
+[package]
+name = "taint-cli"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Declared so rust-analyzer can resolve the library types; the crate is analyzed, not built.
+[dependencies]
+rusqlite = "0.32"
+aes-gcm = "0.10"
+rand = { version = "0.8", features = ["small_rng"] }
+sha1 = "0.10"
+sha2 = "0.10"

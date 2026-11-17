@@ -12,13 +12,17 @@ log = logging.getLogger(__name__)
 async def analyze_project(project_id: str, repo: GraphRepository) -> AnalysisReport:
     languages = await repo.project_languages(project_id)
     findings: list[Finding] = []
-    for analyzer in REGISTRY:
-        if not analyzer.applies_to(languages):
-            log.info("%s: skipped (no %s files)", analyzer.rule, "/".join(analyzer.languages or ()))
-            continue
-        results = await analyzer.run(repo, project_id)
-        log.info("%s: %d finding(s)", analyzer.rule, len(results))
-        findings.extend(results)
+    repo.memo.clear()
+    try:
+        for analyzer in REGISTRY:
+            if not analyzer.applies_to(languages):
+                log.info("%s: skipped (no %s files)", analyzer.rule, "/".join(analyzer.languages or ()))
+                continue
+            results = await analyzer.run(repo, project_id)
+            log.info("%s: %d finding(s)", analyzer.rule, len(results))
+            findings.extend(results)
+    finally:
+        repo.memo.clear()
 
     await repo.replace_findings(project_id, findings)
     return AnalysisReport(

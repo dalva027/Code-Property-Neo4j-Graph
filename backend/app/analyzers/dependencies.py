@@ -24,6 +24,7 @@ MATCH (c:Crate {project_id: $pid})-[a:AFFECTED_BY {kind: 'vulnerability'}]->(adv
 CALL (c, a) {
   OPTIONAL MATCH (f:Function)-[call:CALLS]->(e:External)-[:FROM_CRATE]->(c)
   WHERE e.path IN coalesce(a.functions, [])
+     OR any(alias IN coalesce(e.aliases, []) WHERE alias IN coalesce(a.functions, []))
   WITH f, call, e ORDER BY f.file, call.line
   RETURN [x IN collect(CASE WHEN f IS NULL THEN null ELSE
           {function: f.id, qname: f.qualified_name, file: f.file, line: coalesce(call.line, f.line_start),
@@ -75,7 +76,10 @@ def _fixed_in(patched: list[str] | None) -> str:
 
 
 async def _triage(repo: GraphRepository, project_id: str) -> list[dict[str, Any]]:
-    rows = await repo.query(TRIAGE, pid=project_id)
+    key = ("triage", project_id)
+    if key in repo.memo:
+        return repo.memo[key]
+    rows = repo.memo[key] = await repo.query(TRIAGE, pid=project_id)
     for r in rows:
         if r["reaching"]:
             r["outcome"] = "reachable"

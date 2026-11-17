@@ -3,10 +3,14 @@
 export type NodeKind =
   | "file" | "class" | "function" | "external" | "crate" | "advisory"
   // security facts: unsafe spans, call sites of interest, redacted secret literals
-  | "unsafe" | "call" | "literal";
+  | "unsafe" | "call" | "literal"
+  // data flow (rust-analyzer extractor): a parameter, local or return value
+  | "var";
 export type EdgeKind =
   | "CONTAINS" | "IMPORTS" | "CALLS" | "INHERITS" | "IMPLEMENTS"
   | "REFERENCES" | "HAS_CALL" | "TARGETS" | "HAS_LITERAL"
+  // data flow: a function's variables and how values move between variables and call sites
+  | "DECLARES" | "FLOWS_TO" | "PASSES" | "RETURNS_TO"
   // dependency graph: crates, advisories and how code reaches them
   | "DEPENDS_ON" | "AFFECTED_BY" | "HAS_FILE" | "USES" | "FROM_CRATE";
 export type Severity = "info" | "warning" | "error" | "critical";

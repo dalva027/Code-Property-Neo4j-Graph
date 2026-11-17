@@ -67,6 +67,9 @@ class Reach:
 
 
 async def load_reach(repo: GraphRepository, project_id: str) -> Reach:
-    rows = await repo.query(QUERY, pid=project_id)
-    return Reach({r["id"]: ReachableFunction(r["id"], r["qname"], r["distance"], r["entry_kind"], r["pred"],
-                                             r["in_test"]) for r in rows})
+    key = ("reach", project_id)
+    if key not in repo.memo:
+        rows = await repo.query(QUERY, pid=project_id)
+        repo.memo[key] = Reach({r["id"]: ReachableFunction(r["id"], r["qname"], r["distance"], r["entry_kind"],
+                                                           r["pred"], r["in_test"]) for r in rows})
+    return repo.memo[key]

@@ -5,10 +5,13 @@
 //! `facts.rs`). It never runs cargo and never writes into the scanned tree, so it works on read-only
 //! mounts and without network access once the database is present.
 //!
-//! The `code` subcommand (rust-analyzer based symbols, calls and data flow) arrives in phase 3.
+//! `code` loads the Cargo workspace with rust-analyzer (as a library, see `ra/`) and prints
+//! resolved call sites, typed receivers, macro-internal calls and a def-use data-flow graph for
+//! every function. It runs `cargo metadata` and nothing else: no build scripts, no proc macros.
 
 mod deps;
 mod facts;
+mod ra;
 
 use std::fs;
 use std::io::{self, Write};
@@ -31,6 +34,31 @@ enum Command {
     Deps(DepsArgs),
     /// Clone or update the advisory database, then print its commit.
     FetchDb(DbArgs),
+    /// Symbols, resolved calls and data flow of a Cargo workspace, through rust-analyzer.
+    Code(CodeArgs),
+}
+
+#[derive(Args)]
+struct CodeArgs {
+    /// The Cargo.toml of the package or workspace to analyze.
+    #[arg(long)]
+    manifest_path: PathBuf,
+    /// Directory that file paths are reported relative to; files outside it are skipped.
+    /// Defaults to the manifest's directory.
+    #[arg(long)]
+    root: Option<PathBuf>,
+    /// Pass --offline to cargo metadata: use only dependency sources already in the registry.
+    #[arg(long)]
+    offline: bool,
+    /// Do not load the standard library (faster; std calls stay unresolved).
+    #[arg(long)]
+    no_sysroot: bool,
+    /// Analyze with the default features only instead of all features.
+    #[arg(long)]
+    default_features: bool,
+    /// Write the JSON here instead of stdout.
+    #[arg(long)]
+    out: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -86,6 +114,43 @@ fn main() -> Result<()> {
                 info.path = args.db.advisory_db.display().to_string();
             }
             let json = serde_json::to_string_pretty(&facts)?;
+            match args.out {
+                Some(path) => {
+                    fs::write(&path, json).with_context(|| format!("writing {}", path.display()))?
+                }
+                None => {
+                    let mut out = io::stdout().lock();
+                    out.write_all(json.as_bytes())?;
+                    out.write_all(b"\n")?;
+                }
+            }
+        }
+        Command::Code(args) => {
+            let root = match &args.root {
+                Some(root) => root.clone(),
+                None => args
+                    .manifest_path
+                    .parent()
+                    .map(PathBuf::from)
+                    .unwrap_or_default(),
+            };
+            let options = ra::LoadOptions {
+                offline: args.offline,
+                no_sysroot: args.no_sysroot,
+                all_features: !args.default_features,
+            };
+            // rust-analyzer and the walk recurse over expression trees; deeply nested code
+            // (long method chains, generated tables) needs far more than the default stack.
+            let manifest = args.manifest_path.clone();
+            let worker = std::thread::Builder::new()
+                .name("code".to_owned())
+                .stack_size(1 << 30)
+                .spawn(move || ra::extract(&manifest, &root, &options))
+                .context("starting the analysis thread")?;
+            let facts = worker
+                .join()
+                .map_err(|_| anyhow::anyhow!("the analysis thread panicked"))??;
+            let json = serde_json::to_string(&facts)?;
             match args.out {
                 Some(path) => {
                     fs::write(&path, json).with_context(|| format!("writing {}", path.display()))?

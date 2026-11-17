@@ -1,0 +1,18 @@
+#!/bin/sh
+# Build codegraph-extract with the Rust toolchain from Docker, for machines without cargo.
+# The target directory and the cargo registry live in named volumes, so rebuilds are incremental.
+#
+#   scripts/extractor-build                 # cargo build --release
+#   scripts/extractor-build check           # any other cargo subcommand and arguments
+#
+# The binary stays in the `codegraph-extract-target` volume; `docker build -t codegraph-extract
+# extractor` makes the image that scripts/codegraph-extract-docker runs.
+set -eu
+ROOT=${CODEGRAPH_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
+[ $# -gt 0 ] || set -- build --release
+exec docker run --rm -i -v "$ROOT/extractor:/src" -w /src \
+  -v codegraph-cargo-registry:/usr/local/cargo/registry \
+  -v codegraph-rustup:/usr/local/rustup \
+  -v codegraph-extract-target:/target \
+  -e CARGO_TARGET_DIR=/target -e CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-3}" \
+  rust:1-slim-bookworm cargo "$@"

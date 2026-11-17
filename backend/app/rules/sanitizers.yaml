@@ -1,21 +1,49 @@
-# Calls that make tainted data safe for one rule. Structural sanitizers (an allow-list `match`, a
-# bounds check on the same value, `canonicalize` followed by `starts_with`) are recognised by the
-# analyzers themselves and noted here only for reference.
+# What makes tainted data safe for one rule. Two kinds:
+#   call   a call on the data path whose result is safe (the default kind);
+#   guard  a check applied to a variable on the path, anywhere in its function: a bool-returning
+#          method (`?::starts_with`), or one of the structural checks `ops::cmp` (an ordering
+#          comparison), `ops::eq` (== or !=) and `ops::match` (a match with literal arms).
+# Guards are flow-insensitive: a check after the sink, or one that does not actually reject the
+# value, still counts. That trades missed findings for fewer false ones and is measured, not hidden.
+# Independently of this file, a value of a numeric or bool type ends the taint for the rules that
+# inject text (T1-T4, T6, T7).
 sanitizers:
   T1:
     - {path: "shell_escape::escape"}
-    - {path: "?::parse", note: "parsing into a number type ends the taint"}
+    - {path: "shell_escape::unix::escape"}
+    - {path: "shlex::{quote,try_quote}"}
+    - {path: "?::contains", kind: guard, note: "an allow-list lookup"}
+    - {path: "ops::match", kind: guard, note: "an allow-list match"}
   T2:
-    - {path: "?::bind", note: "bind parameters instead of string building"}
+    - {path: "?::contains", kind: guard, note: "an identifier allow-list"}
+    - {path: "ops::match", kind: guard}
+    # Bind parameters need no entry: the value goes to .bind(), not into the query string.
   T3:
     - {path: "std::path::Path::file_name"}
     - {path: "path_clean::clean"}
-    - {path: "std::fs::canonicalize", note: "only together with a starts_with check on the result"}
+    - {path: "?::starts_with", kind: guard, note: "the canonicalized path stays under the base directory"}
+    - {path: "?::strip_prefix", kind: guard}
+    - {path: "ops::match", kind: guard}
   T4:
-    - {path: "url::Url::host_str", note: "only together with a host allow-list check"}
+    - {path: "?::{host_str,host,domain}", kind: guard, note: "a host allow-list check"}
+    - {path: "?::starts_with", kind: guard}
+    - {path: "?::contains", kind: guard}
+    - {path: "ops::match", kind: guard}
   T5:
-    - {path: "?::min", note: "clamping the length"}
+    - {path: "?::{min,clamp}", note: "clamping the length"}
+    - {path: "ops::cmp", kind: guard, note: "a bounds check on the same value"}
   T6:
-    - {path: "?::starts_with", note: "a relative-path check such as starts_with('/') && !starts_with('//')"}
+    - {path: "?::starts_with", kind: guard, note: "a relative-path check such as starts_with('/')"}
+    - {path: "?::contains", kind: guard}
+    - {path: "ops::match", kind: guard}
   T7:
-    - {path: "http::HeaderValue::from_static"}
+    - {path: "http::HeaderValue::{from_str,from_bytes,from_static,try_from}"}
+    - {path: "?::contains", kind: guard, note: "CR/LF rejection"}
+    - {path: "?::{any,all,find}", kind: guard}
+    - {path: "ops::match", kind: guard}
+  P3:
+    - {path: "?::{min,clamp}"}
+    - {path: "ops::cmp", kind: guard}
+  P4:
+    - {path: "?::{min,clamp}"}
+    - {path: "ops::cmp", kind: guard}

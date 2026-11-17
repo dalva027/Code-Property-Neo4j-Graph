@@ -4,7 +4,7 @@ Topic: **Graph Databases and Software Vulnerabilities Detection and Visualizatio
 Target language: **Rust** (analyzed code and the new extractor). Orchestration, rules and UI stay on
 the existing FastAPI + Neo4j + React stack.
 
-Status: draft, 2026-10-24; benchmark dataset added 2026-11-02. Phases 0, 1 and 2 done 2026-11-04; Phase 3 next.
+Status: draft, 2026-10-24; benchmark dataset added 2026-11-02; RustXec conditions of use (§7.8) added 2026-11-11. Phases 0, 1 and 2 done 2026-11-04; Phase 3 done 2026-11-11; Phases 4 and 5 next.
 
 ---
 
@@ -402,11 +402,129 @@ Goal: replace tree-sitter for Cargo projects with resolved, typed, macro-aware f
    YAML catalogue; P3, P4; typed upgrades of U3, P2, C1, C2, C3, C6; `GraphBuilder` dispatch to the
    extractor with fallback; Docker image with the toolchain; `repos/vuln-samples/taint` (an axum
    service and a CLI, each with one true positive and one sanitized negative per T rule).
+5. **Alongside, off the critical path: RustXec fetch and localize** (§7.4 steps 1–2, §7.8
+   condition 3). Shallow clones and diffs only, nothing built or executed. Produces `cases.yaml`
+   with ground truth and frozen `expected_rules`, and the count of cases that could not be rebuilt.
 
 Acceptance: T rules reach precision ≥ 0.9 and recall ≥ 0.9 on the synthetic taint samples; the
 Phase 3 anchor cases of §7.6 are detected on their vulnerable snapshot; unknown
 receivers (`?::`) drop below 10 % of External nodes on three real crates; macro-internal calls
-appear in the graph; the whole suite still passes with the extractor disabled.
+appear in the graph; the whole suite still passes with the extractor disabled; `cases.yaml` holds
+every rebuildable RustXec case with frozen `expected_rules`, and the unrebuildable count is known.
+
+**Done (2026-11-11).** All five items shipped. Acceptance, as measured:
+- The seven T rules score precision 1 and recall 1 on `repos/vuln-samples/taint` (15 expected
+  findings over an axum service and a CLI, each rule with a vulnerable function and a safe twin
+  that must stay silent), as do P3, P4 and the flow forms of C1, C2, C3 and C6 (7 more). The
+  samples were written together with the rules, so this is the corpus the rules were built
+  against, not an independent measurement.
+- Phase 3 anchors (`eval/anchors.py --phase 3`, on the affected member): 5 of the 7 cases with a
+  rule are detected (tar T3, hyper-staticfile T6, trillium-http T7, hyper P3, smallvec P3). The two
+  gitoxide cases are missed: gix-transport hands the argument to `gix_command::Prepare::arg` and
+  gix-fs builds the path that gix-worktree opens, so in both the sink is in a sibling crate
+  outside the member. tokio's labelled function is located in the graph; no rule is expected on it.
+  So the acceptance line "the anchors are detected" is not fully met.
+- `?::` externals on three real crates (`eval/receivers.py`): fd 69.0 % to 4.9 %, ripgrep 54.3 % to
+  3.8 %, zola 52.1 % to 2.5 % of External nodes, against the 10 % target. What remains is in
+  functions rust-analyzer does not analyze (cfg-disabled code).
+- Macro-internal calls are in the graph: 351, 1 662 and 4 278 call sites inside macro invocations
+  on those crates, and a test shows a call made by a `macro_rules!` body that tree-sitter cannot see.
+- The suite passes with the extractor disabled (`CODE_FACTS=off` or no binary); the two cases
+  that need the binary are skipped. With it, all eight ground-truth cases score 1/1, and the
+  Phase 2 anchors are unchanged (6 of 7).
+- RustXec: all 102 cases were rebuilt from git (none unrebuildable), 2 are excluded (hashbrown:
+  the fix link is a release commit without the vulnerable code; flatbuffers: a 66-function
+  refactor), and `eval/rustxec/cases.yaml` holds ground truth and frozen `expected_rules` for
+  every case: 40 in scope (U 21 of 46, P 10 of 28, T 8 of 18, C 1 of 10), 92 at function level.
+
+Choices made while building:
+- **The extractor overlays tree-sitter instead of replacing it.** `codegraph-extract code` emits
+  what needs name resolution and types: every call site resolved to a workspace function or an
+  external path, receiver types, macro expansions, index and arithmetic operand types, and data
+  flow. The lexical facts (symbol spans, SAFETY comments, attributes, secret literals, complexity)
+  stay with tree-sitter, and `backend/app/graph/facts.py` joins the two by source position. One
+  implementation per fact, cfg-disabled code keeps its lexical facts, and the fallback is per
+  function. The extractor still lists every item it sees, and the golden test compares that list
+  with tree-sitter's symbols on `repos/sample-rust`. This is a narrower extractor than §4.1 and
+  the M3 wording ("replaces tree-sitter") describe.
+- rust-analyzer is used as a library, pinned to `ra_ap_* = 0.0.358` and confined to
+  `extractor/src/ra/`. It runs `cargo metadata` and nothing else: no build scripts, no proc-macro
+  server, so nothing from the scanned project executes. When no `Cargo.lock` sits next to the
+  manifest the lockfile is redirected to a temporary directory, so a scan never writes into the
+  scanned tree (the first version did create a `Cargo.lock`; found and fixed).
+- **Names of external callees.** A callee is named by the path it was written with, else by the
+  crate that defines it; the extractor sends all candidates and the loader keeps the first one the
+  catalogue matches. Naming by "shortest importable path" was dropped after it called `sha2`'s
+  `Digest::digest` `sha1::Digest::digest` and fired the weak-hash rule on SHA-256.
+- **Graph.** Every call site is a `Call` node in extractor mode, as are index operations, integer
+  arithmetic and struct literals; `Var` nodes for parameters, locals and return values;
+  `FLOWS_TO`, `PASSES`, `RETURNS_TO`, `DECLARES`. Differences from §5.2: `PASSES` goes from the
+  argument's node straight to the callee's parameter (not from the Call), so two arguments stay
+  apart; a workspace callee's `&mut` parameters and `&mut self` flow back to the caller with
+  `RETURNS_TO`; a trait method `REFERENCES` each impl in the workspace (`via: dispatch`), which also
+  makes impls reachable from entry points.
+- **Sanitizing.** Three things block a path: a sanitizer call, a guard on a variable (a check
+  recorded flow-insensitively: `starts_with`, a comparison, an allow-list `match`), and, for the
+  rules that inject text, a numeric or bool type. A call that writes through a `&mut` argument
+  carries taint whatever it returns (`read(&mut buf)` returns a count).
+- **The path search is level-wise, not one path query.** `SHORTEST 1` per sink was written first
+  and did not finish on tar's 10 000 flow edges once sources were many and the hop bound was 16
+  (over seven minutes, stopped by hand). The rules now expand breadth-first from all sources at
+  once, one Cypher statement per level; the whole analysis of tar takes four seconds. The single
+  path query remains the way to explore one path by hand. Worth a paragraph under RQ3.
+- **Sources.** Besides the catalogue's calls and extractor types there are two weak kinds, one
+  severity level lower and low confidence: library mode (every parameter of a `pub` fn of a
+  library crate, `self` included) and reads through a reader of unknown type
+  (`std::io::Read::read` on a generic). Rules about numbers (T5, P3, P4) start from a library
+  parameter only when it is raw data (slice, string, buffer, generic); without that every
+  `pub fn area(w: u32, h: u32)` was an overflow finding. For the same rules only a number may
+  enter a struct literal, which keeps a tainted `name` from tainting `price`.
+- **Catalogue 0.3.0.** Sinks can require a format string (`template`) or another argument to be a
+  given constant (`when`); sanitizers have `kind: guard`. T7 differs from §3: `HeaderValue::from_str`
+  and `from_bytes` reject CR and LF, so they are sanitizers; the sinks are
+  `from_maybe_shared_unchecked` and header lines written by hand. `Path::join` and `PathBuf::push`
+  are propagators, not sinks. A `reader` source group was added.
+- **Severity.** T1, T2 and T5 are critical, T3 and T4 error, T6, T7, P3 and P4 warning, for input
+  that is attacker-controlled by construction; weak sources are one level lower.
+- **Typed upgrades.** U3 counts `add`/`offset`/`sub` on raw pointers only and is an error when an
+  argument is tainted; P2 leaves maps out and is a warning for a tainted index; C1 is an error
+  when a password-named variable feeds the hash; C2 `weak-password-hashing` is new; C3 is an error
+  when RNG output reaches a variable named like key material; C6 flags a nonce built from a literal
+  or a constant local. "Password" and "key material" are decided by variable names.
+- Shared work per analysis run is memoised on the repository (reachability, triage, sources), and
+  edges are written with exact endpoint labels so every lookup is an index seek.
+- The API image is now based on the Rust image with Python added, as §4.2 planned: 1.03 GB, up
+  from 217 MB (the standalone extractor image is 919 MB). The extractor container and the API
+  service are capped in memory, because an extractor that ran out of memory on all of gitoxide
+  took the Neo4j container down with it during this phase.
+- Unit tests always run in tree-sitter mode (`tests/conftest.py`), so they do not change with the
+  machine; only the ground-truth harness and the fixture check follow the environment. The suite
+  is 110 tests with the extractor and 106 plus 4 skipped without it.
+- RustXec fetch and localize were done by a delegated agent run (five parallel readers under one
+  written rubric for `expected_rules`, then adjudicated). The review of 26 cases is a machine
+  review and is labelled so in `cases.yaml`; a human pass over it is still owed (§7.4 says
+  "hand-review").
+
+Gaps and things to know before Phase 5:
+- The anchors were used to adjust rules after the freeze stamp was written: the `reader` sources
+  (hyper), the `Location`-by-name sink (hyper-staticfile), the split header template (trillium)
+  and `self` as a library source. `expected_rules` was not touched and `amendments` is empty, but
+  those cases are no longer unseen: report RustXec with and without the eight anchor cases. The
+  catalogue also kept changing under the version 0.3.0 that the stamp names; the digest in
+  `/api/rules` identifies the final one.
+- The frozen expectations disagree with two anchors of §7.6: nano-id is out of reach (as phase 2
+  found) and smallvec is expected under `dangerous-unsafe-op`, not P3.
+- Flows across workspace members are invisible when only the member is scanned (§7.5 protocol);
+  four RustXec ground truths lie outside their member. Analyzing all of gitoxide in one run did
+  not fit in a 4 GB Docker VM.
+- Not done: proc-macro expansion; `vec![x; n]` and `read_to_end` as P4 sinks; clap's derived
+  structs as sources (only `Parser::parse()`); handler detection for warp/tower closures;
+  constant propagation beyond literals and never-assigned locals; `receiver_type` on External
+  nodes (it is on the Call node as `recv_type`); a `facts.json` cache key by lockfile hash (the
+  cache is keyed by a hash of all sources and off by default).
+- The unit tests of §6 item 3 are Python tests over committed extractor output for a crate of
+  small bodies (`backend/tests/fixtures/flows`), not Rust tests inside the extractor; the Rust
+  tests cover its helper functions only.
 
 ### Phase 4: visualization (~2 weeks, can start after Phase 1)
 
@@ -428,11 +546,13 @@ three clicks, and from a taint finding to every hop of the flow.
 
 Research questions and how each is answered:
 
-- **RQ1 Effectiveness.** Precision and recall per class on (a) the synthetic corpus and (b) real
-  vulnerabilities. The primary real set is **RustXec** (§7): 102 RustSec cases in 89 projects, run
-  as vulnerable/fixed snapshot pairs, reporting detection, fix-awareness, triage rank and noise per
-  class. Supplements cover what RustXec lacks: the `unsound` RustSec advisories and Rudra's bugs
-  for U; synthetic downstream projects for D; a hand-labelled sample of flows in open-source
+- **RQ1 Effectiveness.** Precision and recall per rule on (a) the synthetic corpus, and detection
+  on (b) real vulnerabilities. The primary real set is **RustXec** (§7, conditions of use in §7.8):
+  102 RustSec cases in 89 projects, run as vulnerable/fixed snapshot pairs, reporting detection,
+  fix-awareness, triage rank and noise per class over the frozen in-scope subset, with coverage
+  over all 102 cases beside it. RustXec gives no precision; the synthetic corpus does. Supplements
+  cover what RustXec lacks: the `unsound` RustSec advisories and Rudra's bugs for U (required,
+  §7.3); synthetic downstream projects for D; a hand-labelled sample of flows in open-source
   axum/actix services for T.
 - **RQ2 Comparison.** Run on the same RustXec snapshots and the synthetic corpus. cargo-audit for D1 (expect parity) and D2 (expect the reachability split to
   cut actionable alerts substantially; report the percentage); cargo-geiger for unsafe metrics;
@@ -448,8 +568,9 @@ Research questions and how each is answered:
   injection) with time-to-answer and a short questionnaire. If recruiting is not possible, two
   written case studies.
 
-Prerequisite: the RustXec pipeline of §7 is built at the start of this phase (about one week of
-the three), and the Phase 2/3 anchor cases have already been run during those phases.
+Prerequisite: the fetch and localize steps of §7.4 ran during Phase 3 and `cases.yaml` is frozen
+(§7.8); the run and score steps are built at the start of this phase (about half a week of the
+three); the Phase 2/3 anchor cases have already been run during those phases.
 
 Deliverables: `eval/` scripts that reproduce every table and figure from a pinned RustXec commit,
 a pinned advisory-db commit and pinned crate versions; the catalogue version used; the
@@ -457,8 +578,13 @@ limitations list, including the RustXec cases no rule covers.
 
 ## 7. Benchmark dataset: RustXec
 
-To be built at the start of Phase 5. The anchor cases in §7.6 are used earlier, as smoke tests in
-Phases 2 and 3. Nothing below exists yet.
+The fetch and localize steps of §7.4 run during Phase 3, the run and score steps at the start of
+Phase 5 (§7.8, condition 3). The anchor cases in §7.6 are used earlier, as smoke tests in Phases 2
+and 3. Done so far: `metadata.csv` is vendored at `eval/rustxec/`; the Phase 2 anchors have
+been run (`eval/anchors.py`, 6 of 7 detected) and the Phase 3 ones (5 of 7); fetch and localize
+have run for all 102 cases and `eval/rustxec/cases.yaml` is frozen (2026-11-11: 40 in scope, 2
+excluded, none unrebuildable). §7.8 states the conditions under which RustXec is the main
+real-world test set.
 
 ### 7.1 What it is
 
@@ -504,15 +630,18 @@ unsafe operation 14, crypto terms 13, unbounded allocation 12, overflow 8, recur
 overflow 5, command/path/redirect 5, `unsafe impl Send/Sync` 1. This motivated adding P5 and T7.
 
 **Gaps that need supplements:**
-- U: the excluded `unsound` advisories are the cases unsafe-focused graph rules fit best. Add the
-  `unsound` RustSec advisories that carry a fix commit, plus Rudra's reported bugs, as a second U
-  set, scored with the same protocol but reported separately.
+- U: the excluded `unsound` advisories are the cases unsafe-focused graph rules fit best, so the
+  dataset is biased against this class. Adding the `unsound` RustSec advisories that carry a fix
+  commit, plus Rudra's reported bugs, as a second U set, scored with the same protocol but
+  reported separately, is required, not optional (§7.8).
 - U4 has a single RustXec case; evaluate it on Rudra's Send/Sync variance bugs.
 - D: no direct cases; see §7.5.
 
 ### 7.4 Pipeline
 
-Four scripts under `eval/rustxec/`, run in order:
+Four scripts under `eval/rustxec/`, run in order. Steps 1 and 2 run during Phase 3: they only
+clone and diff, and the tree-sitter parser already gives the function spans they need. Steps 3
+and 4 run at the start of Phase 5 (§7.8, condition 3).
 
 1. **fetch.** Read the vendored `metadata.csv`. Resolve `fix commit links` to a repository and
    commit: plain commit URLs directly, pull-request URLs through the GitHub API to the merge
@@ -523,7 +652,9 @@ Four scripts under `eval/rustxec/`, run in order:
    Otherwise diff `vuln` against `fixed`, drop test files, docs, changelogs and version bumps, and
    map the remaining hunks onto function spans using our own parser's line ranges. Fall back to
    file level when a hunk is outside any function. Hand-review about 20 cases, record the verdict,
-   and exclude cases where the fix is a large refactor.
+   and exclude cases where the fix is a large refactor. In the same pass, decide per case which
+   rules are expected to fire, from the advisory text and the diff alone, and freeze that in
+   `cases.yaml` before step 3 is run for the first time (§7.8, condition 1).
 3. **run.** Ingest the affected workspace member of each snapshot as its own project, run all
    analyzers, export SARIF. Run clippy, Semgrep and CodeQL on the same snapshots through the same
    runner, normalized to SARIF.
@@ -532,8 +663,11 @@ Four scripts under `eval/rustxec/`, run in order:
 
 `eval/rustxec/cases.yaml` is the curated record per case: `id`, `class`, `repo`, `vuln_rev`,
 `fixed_rev`, `member`, `ground_truth` (function qualified names or files), `granularity`
-(`function` or `file`), `source` (`advisory`, `diff`, `manual`), `excluded` with a reason, and the
-rules expected to apply.
+(`function` or `file`), `source` (`advisory`, `diff`, `manual`), `excluded` with a reason,
+`expected_rules` (empty when no rule can apply, with a one-line reason such as "logic bug inside
+correct-looking unsafe" or "wrong alphabet, the RNG is sound"), and `frozen` (the date and
+catalogue version at which `expected_rules` was fixed). After freezing, a change to
+`expected_rules` is a recorded amendment with a reason, never a silent edit.
 
 ### 7.5 Metrics and protocol
 
@@ -554,6 +688,12 @@ rules expected to apply.
   2026-11-02), the advisory-db commit, the rule-catalogue version and the Rust toolchain. Report
   excluded cases and why. Use library-mode sources (§5.5) for library crates. Note in the threats
   to validity that ground truth derived from fix diffs can include incidental changes.
+- **Two denominators.** Detection, fix-awareness and triage rank are reported over the frozen
+  in-scope subset (cases with a non-empty `expected_rules`). Coverage is reported over all 102
+  cases. Both numbers appear in every table; neither is quoted without the other (§7.8).
+- **What RustXec does not measure.** It holds positives only, so it yields no precision. Precision
+  and recall per rule come from the synthetic corpus; on RustXec the false-positive side is the
+  noise and rank proxies above, and the report names them as proxies (§7.8, condition 2).
 
 ### 7.6 Anchor cases
 
@@ -580,6 +720,44 @@ Run these early as smoke tests on the `vuln` snapshot; each should produce the l
   a second set if it is released.
 - **Rudra** bug list and the **Xu et al. (TOSEM 2021)** Rust CVE study: supplements for U.
 
+### 7.8 Conditions for using RustXec as the main test set
+
+Decision (2026-11-11): RustXec is the main real-world test set. It is peer-reviewed, public, every
+case is confirmed by a running proof of vulnerability, every case has a fix commit, and nothing
+comparable exists for Rust. It is not the sole measure of effectiveness. The facts that limit it,
+read from the vendored index:
+
+| Fact | Consequence for the evaluation |
+|---|---|
+| 102 cases: U 46, P 28, T 18, C 10; a single U4 case | Per-class results are descriptive, not statistical. C and U4 are written up as case studies, with no significance claims. |
+| `affected.functions` filled for 16 cases | 86 ground truths come from fix diffs and are noisy; the hand review of §7.4 step 2 is mandatory and its verdicts are reported. |
+| `unsound` (89) and `unmaintained` (117) advisories excluded by construction | The set is biased against static unsafe analysis; the `unsound` supplement of §7.3 is required. |
+| Positives only, no labelled negatives | No precision from RustXec. Noise per kLOC and triage rank are proxies and are named as such. |
+| 36 of 102 fix links are pull requests; 5 cases are on GitLab, 1 elsewhere | Some cases will not rebuild from git; the count and the reasons are reported. |
+| 89 projects; wasmtime 5 cases, openssl 4 | Mild project concentration; results are also given per project where it matters. |
+| Published in 2026, no prior tool results on it | The clippy, cargo-audit, Semgrep and CodeQL runs on the same snapshots (RQ2) are what make the numbers comparable. They stay in scope. |
+
+Three conditions follow. The evaluation is not valid without them:
+
+1. **Freeze the in-scope subset before the tool is scored on it.** Many cases are semantic bugs no
+   rule can see (nano-id's reduced alphabet, HTML-sanitizer logic, protocol and signature flaws).
+   For every case, `expected_rules` is decided from the advisory text and the fix diff during
+   localization and frozen in `cases.yaml` with a date and catalogue version, before the run step
+   is executed for the first time. Recall is reported over that subset and coverage over all 102,
+   always together. Choosing the subset after seeing results is cherry-picking, and a reader will
+   call it that.
+2. **The synthetic corpus remains the precision and recall measure per rule.** RustXec answers
+   "does the tool find real vulnerabilities and rank them usefully". The vuln-samples ground truth
+   (`expected.json` per sample, harness at precision/recall 1) answers "what fraction of its
+   findings are true". Every results chapter keeps the two apart.
+3. **Run fetch and localize during Phase 3, not at the start of Phase 5.** They only clone and
+   diff; nothing is built or executed, and the tree-sitter parser already gives the function spans.
+   This shows how many cases survive and how clean the diff ground truth is while rules can still
+   be adjusted. The run and score steps, and the comparison tools, stay in Phase 5.
+
+The anchor cases of §7.6 were chosen because a rule should detect them. Their result (6 of 7 in
+Phase 2) is a smoke test, not evidence of recall, and is never reported as such.
+
 ## 8. Milestones
 
 | Milestone | When | Definition of done |
@@ -587,7 +765,7 @@ Run these early as smoke tests on the `vuln` snapshot; each should produce the l
 | M0 | end of week 2 | Finding/edge/External model and ground-truth harness merged |
 | M1 | week 4 | Dependency graph with advisories in the UI; D1 matches cargo-audit on 3 crates |
 | M2 | week 7 | U, P, C MVP rules with evidence paths; harness green; clippy and geiger comparisons scripted |
-| M3 | week 12 | Extractor replaces tree-sitter for Cargo projects; T1–T7 pass the taint samples and Phase 3 anchor cases; typed upgrades live |
+| M3 | week 12 | Extractor replaces tree-sitter for Cargo projects; T1–T7 pass the taint samples and Phase 3 anchor cases; typed upgrades live; RustXec fetched and localized, `cases.yaml` frozen |
 | M4 | week 14 | Path explorer, dependency view, source panel, SARIF |
 | M5 | week 17 | RustXec pipeline built and scored; evaluation reproduced from scripts; report draft |
 
@@ -604,7 +782,10 @@ Run these early as smoke tests on the `vuln` snapshot; each should produce the l
 | Secrets leaking into the database | `Literal` stores a redacted preview and a hash only; test code flagged; no raw values in findings |
 | RustXec cases cannot be rebuilt from git (repo moved, PR link, history rewritten) | Resolve by hand in `cases.yaml`; fall back to the case's source in the Zenodo archive; report the count |
 | Fix-diff ground truth is noisy | Prefer `affected.functions`; drop tests and version bumps; hand-review ~20 cases; report file-level and function-level results separately |
-| RustXec under-represents unsafe soundness bugs | Separate U supplement from `unsound` advisories and Rudra, reported alongside |
+| RustXec under-represents unsafe soundness bugs | Separate U supplement from `unsound` advisories and Rudra, reported alongside (required, §7.8) |
+| In-scope RustXec subset chosen after seeing results | `expected_rules` frozen in `cases.yaml` during localization, before the first scoring run; amendments recorded with reasons (§7.8) |
+| RustXec per-class counts too small for statistical claims (C 10, U4 1) | Report descriptively; C and U4 as case studies; precision and recall claims rest on the synthetic corpus |
+| Number of rebuildable RustXec cases unknown until Phase 5 | Fetch and localize run in Phase 3 (§7.8, condition 3) |
 | Phase 3 slips | Phases 1, 2 and 4 already deliver four of five classes; a lexical same-function taint fallback on tree-sitter is the documented degraded mode for T |
 
 ## 10. Repository layout after the plan

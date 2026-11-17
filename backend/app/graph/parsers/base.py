@@ -23,6 +23,11 @@ class ParsedSymbol:
     subkind: str | None = None      # language-specific flavour, e.g. "struct", "trait", "method"
     # Non-numeric facts: visibility, is_unsafe, is_async, abi, entry_kind, in_test, params (JSON)...
     attrs: dict[str, AttrValue] = field(default_factory=dict)
+    # Where the name token sits (1-based line, 0-based byte column). Two parsers of the same file
+    # agree on this even when they disagree on where the item starts (attributes, doc comments),
+    # so it is the key that joins extractor facts onto a symbol. (0, 0) when unknown.
+    name_line: int = 0
+    name_col: int = 0
 
 
 @dataclass(frozen=True)
@@ -42,6 +47,16 @@ class ParsedCall:
     # False when the path certainly leaves the project (`std::`, a dependency crate, a prelude
     # type), so the builder must not resolve it to a project symbol by name.
     resolvable: bool = True
+    # Set by the rust-analyzer extractor (app/graph/facts.py). `site` is the extractor's id of the
+    # call site, which data-flow edges refer to; a call with a site always gets a Call node. `seq`
+    # tells apart several sites at one position (calls made by one macro expansion). `attrs` are
+    # typed facts for the Call node: ret_kind, recv_type, arg_count, in_macro. `aliases` are the
+    # other paths the callee is known by, and `crate` the crate that defines it.
+    site: int | None = None
+    seq: int = 0
+    attrs: tuple[tuple[str, AttrValue], ...] = ()
+    aliases: tuple[str, ...] = ()
+    crate: str | None = None
 
 
 @dataclass(frozen=True)
@@ -78,6 +93,9 @@ class ParsedOp:
     col: int
     in_unsafe: bool
     detail: str                     # the index expression, or the operator
+    site: int | None = None         # extractor site id, as on ParsedCall
+    seq: int = 0
+    attrs: tuple[tuple[str, AttrValue], ...] = ()   # base_kind for an index, ret_kind
 
 
 @dataclass(frozen=True)
@@ -108,6 +126,32 @@ class ParsedImpl:
     trait_external: str | None = None   # `::` path of the trait when it is not a project trait
 
 
+@dataclass(frozen=True)
+class ParsedVar:
+    """A parameter, local or return value of a function, from the extractor's data-flow pass."""
+    id: int                         # extractor id; flow edges refer to it
+    function: str                   # qualified name of the owning function
+    name: str
+    kind: str                       # "param" | "local" | "ret"
+    line: int
+    col: int
+    index: int | None = None        # parameter position, self included
+    type: str | None = None         # as rust-analyzer displays it
+    ty_kind: str = "unknown"        # int, bool, float, str, unit, other, ...
+    type_path: str | None = None    # `::` path of the type's definition
+    param_type: str | None = None   # for parameters: path of the declared parameter type
+    guards: tuple[str, ...] = ()    # checks applied to it anywhere in the function
+
+
+@dataclass(frozen=True)
+class ParsedFlow:
+    """A data-flow edge between two variables or call sites, by extractor id."""
+    source: tuple[str, int]         # ("v", var id) or ("s", site id)
+    target: tuple[str, int]
+    kind: str                       # "flow" | "pass" | "ret"
+    via: str                        # assign, arg:<i>, recv, macro, mut, out, match, for, closure, return, dispatch
+
+
 @dataclass
 class ParsedFile:
     path: str                       # relative to project root, posix separators
@@ -129,6 +173,12 @@ class ParsedFile:
     literals: list[ParsedLiteral] = field(default_factory=list)
     metrics: dict[str, int | float] = field(default_factory=dict)   # unsafe_blocks, unsafe_density...
     in_test: bool = False           # the whole file is test code (e.g. under tests/)
+    # Data flow (extractor only): variables of this file's functions, and the flow edges that
+    # start in this file.
+    vars: list[ParsedVar] = field(default_factory=list)
+    flows: list[ParsedFlow] = field(default_factory=list)
+    # (trait fn, impl fn) qualified names: a call resolved to the trait method may run the impl.
+    dispatch: list[tuple[str, str]] = field(default_factory=list)
 
 
 class LanguageParser(Protocol):

@@ -28,8 +28,15 @@ LABELS = {
     NodeKind.unsafe: "Unsafe",
     NodeKind.call: "Call",
     NodeKind.literal: "Literal",
+    NodeKind.var: "Var",
 }
-GRAPH_LABELS = "File|Symbol|Unsafe|Call|Literal"   # what the code graph builder writes
+GRAPH_LABELS = "File|Symbol|Unsafe|Call|Literal|Var"   # what the code graph builder writes
+# The label that carries the uniqueness constraint on `id`, per node kind. Edges are written with
+# both endpoint labels spelled out, so every lookup is an index seek however large the graph is.
+ID_LABELS = {
+    NodeKind.file: "File", NodeKind.class_: "Symbol", NodeKind.function: "Symbol", NodeKind.external: "Symbol",
+    NodeKind.unsafe: "Unsafe", NodeKind.call: "Call", NodeKind.literal: "Literal", NodeKind.var: "Var",
+}
 ENTRY_KINDS = ["main", "handler", "pub_api", "ffi"]   # test functions are never reachability roots
 MAX_ENTRY_DEPTH = 10
 SEVERITY_RANK = {Severity.critical: 0, Severity.error: 1, Severity.warning: 2, Severity.info: 3}
@@ -107,6 +114,11 @@ def _advisory_info(props: dict[str, Any], kind: str) -> AdvisoryInfo:
 
 
 class GraphRepository:
+    def __init__(self) -> None:
+        # Results that several rules of one analysis run share (entry-point reachability, taint
+        # sources, dependency triage). `analyze_project` clears it before and after a run.
+        self.memo: dict[Any, Any] = {}
+
     # -- projects -------------------------------------------------------------
     async def create_project(self, name: str, root: str) -> Project:
         """Create a project in the `scanning` state; the caller starts the scan."""
@@ -197,13 +209,18 @@ class GraphRepository:
                 pid=project_id, ids=chunk,
             )
 
-        for kind in CODE_EDGE_KINDS:
-            rows = [{"source": e.source, "target": e.target, "props": e.props}
-                    for e in graph.edges if e.kind == kind]
+        label_of = {n.id: ID_LABELS[n.kind] for n in graph.nodes}
+        groups: dict[tuple[EdgeKind, str, str], list[dict[str, Any]]] = {}
+        for e in graph.edges:
+            if e.kind not in CODE_EDGE_KINDS or e.source not in label_of or e.target not in label_of:
+                continue
+            groups.setdefault((e.kind, label_of[e.source], label_of[e.target]), []).append(
+                {"source": e.source, "target": e.target, "props": e.props})
+        for (kind, source_label, target_label), rows in groups.items():
             for chunk in _chunks(rows):
                 await neo4j.run(
                     f"UNWIND $rows AS p "
-                    f"MATCH (a:{GRAPH_LABELS} {{id: p.source}}) MATCH (b:{GRAPH_LABELS} {{id: p.target}}) "
+                    f"MATCH (a:{source_label} {{id: p.source}}) MATCH (b:{target_label} {{id: p.target}}) "
                     f"MERGE (a)-[r:{kind.value}]->(b) SET r += p.props",
                     rows=chunk,
                 )
@@ -336,7 +353,9 @@ class GraphRepository:
               WITH f, call, e ORDER BY f.file, call.line
               RETURN collect({function: f.id, qualified_name: f.qualified_name, file: f.file,
                               line: coalesce(call.line, f.line_start), path: e.path,
-                              affected: e.path IN coalesce(a.functions, [])}) AS functions
+                              affected: e.path IN coalesce(a.functions, [])
+                                  OR any(alias IN coalesce(e.aliases, [])
+                                         WHERE alias IN coalesce(a.functions, []))}) AS functions
             }
             CALL (c) {
               OPTIONAL MATCH (file:File)-[:USES]->(c)
@@ -369,8 +388,10 @@ class GraphRepository:
         nodes = await neo4j.run(
             "MATCH (n:File|Symbol {project_id: $pid}) RETURN n LIMIT $limit", pid=project_id, limit=limit
         )
+        # Only edges between what the canvas shows: with the extractor a function also has edges
+        # to its call sites and variables, many times more than to other symbols.
         edges = await neo4j.run(
-            f"MATCH (a:File|Symbol {{project_id: $pid}})-[r:{REL_TYPES}]->(b) "
+            f"MATCH (a:File|Symbol {{project_id: $pid}})-[r:{REL_TYPES}]->(b:File|Symbol) "
             "RETURN a.id AS source, b.id AS target, type(r) AS kind, properties(r) AS props",
             pid=project_id,
         )
@@ -401,7 +422,7 @@ class GraphRepository:
                 UNWIND $rows AS r
                 CREATE (f:Finding) SET f = r
                 WITH f, r
-                OPTIONAL MATCH (n:File|Symbol|Crate|Unsafe|Call|Literal {id: r.node_id})
+                OPTIONAL MATCH (n:File|Symbol|Crate|Unsafe|Call|Literal|Var {id: r.node_id})
                 FOREACH (_ IN CASE WHEN n IS NULL THEN [] ELSE [1] END | MERGE (n)-[:HAS_FINDING]->(f))
                 """,
                 rows=chunk,
