@@ -12,15 +12,12 @@ The harness runs in whichever mode the environment configures: with the binary e
 scanned through the rust-analyzer extractor, and with `CODE_FACTS=off` (or no binary) through
 tree-sitter alone. The cases that do not require the extractor must score 1/1 both ways.
 """
-import os
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
 from app.analyzers import REGISTRY
 from app.config import settings
-from app.db import neo4j
 from app.evaluate import format_report, load_expected, score
 from app.graph.deps import extractor_path
 from app.graph.repository import GraphRepository
@@ -30,39 +27,6 @@ from app.services.ingest import build_and_store
 
 REPOS = Path(__file__).resolve().parents[2] / "repos"
 CASES = sorted(p for p in REPOS.rglob("expected.json") if "target" not in p.parts)
-
-
-@pytest.fixture(scope="session")
-def neo4j_server() -> Iterator[tuple[str, str, str]]:
-    if uri := os.environ.get("CODEGRAPH_TEST_NEO4J_URI"):
-        yield (uri, os.environ.get("CODEGRAPH_TEST_NEO4J_USER", "neo4j"),
-               os.environ.get("CODEGRAPH_TEST_NEO4J_PASSWORD", "codegraph"))
-        return
-    try:
-        try:
-            from testcontainers.community.neo4j import Neo4jContainer
-        except ImportError:
-            from testcontainers.neo4j import Neo4jContainer
-        container = Neo4jContainer("neo4j:5", password="codegraph-test")
-        container.start()
-    except Exception as exc:  # noqa: BLE001 - no testcontainers, no Docker daemon, no image...
-        pytest.skip(f"no Neo4j for the ground-truth harness: {exc}")
-    try:
-        yield container.get_connection_url(), container.username, container.password
-    finally:
-        container.stop()
-
-
-@pytest.fixture
-async def repo(neo4j_server, monkeypatch: pytest.MonkeyPatch):
-    uri, user, password = neo4j_server
-    monkeypatch.setattr(settings, "neo4j_uri", uri)
-    monkeypatch.setattr(settings, "neo4j_user", user)
-    monkeypatch.setattr(settings, "neo4j_password", password)
-    await neo4j.connect(retries=30, delay=1.0)
-    await neo4j.apply_schema()
-    yield GraphRepository()
-    await neo4j.close()
 
 
 def test_cases_are_discovered():

@@ -16,6 +16,7 @@ from app.models.deps import (
     ReachingFunction,
 )
 from app.models.graph import CODE_EDGE_KINDS, CodeGraph, EdgeKind, GraphEdge, GraphNode, NodeKind
+from app.models.views import DependencyView, SourceFlag
 
 CORE_PROPS = {"id", "project_id", "kind", "name", "qualified_name", "file", "line_start", "line_end", "language",
               "subkind"}
@@ -66,6 +67,34 @@ CALL (n) {{
 RETURN n, outgoing, incoming, findings
 """
 
+
+def _by_ids(var: str) -> str:
+    """Bind `var` to the nodes whose id is in $ids, one index seek per label (a label disjunction in
+    one MATCH would scan). Advisories are global; everything else must belong to $pid."""
+    project = [f"MATCH ({var}:{label}) WHERE {var}.id IN $ids AND {var}.project_id = $pid RETURN {var}"
+               for label in ("File", "Symbol", "Unsafe", "Call", "Literal", "Var", "Crate")]
+    return "CALL () {\n  " + "\n  UNION ALL ".join(
+        [*project, f"MATCH ({var}:Advisory) WHERE {var}.id IN $ids RETURN {var}"]) + "\n}"
+
+
+# Evidence nodes with the function (or file) that holds them, when they are part of a body.
+RESOLVE_NODES = f"""
+{_by_ids("n")}
+CALL (n) {{
+  OPTIONAL MATCH (o:Symbol|File)-[:DECLARES|HAS_CALL|CONTAINS|HAS_LITERAL]->(n)
+  WHERE n:Var OR n:Call OR n:Unsafe OR n:Literal
+  RETURN o ORDER BY CASE WHEN o:Function THEN 0 WHEN o:Symbol THEN 1 ELSE 2 END LIMIT 1
+}}
+RETURN n, o AS owner
+"""
+
+# Stored edges between any two of the given nodes.
+EDGES_AMONG = f"""
+{_by_ids("a")}
+MATCH (a)-[r:{REL_TYPES}]->(b) WHERE b.id IN $ids AND (b:Advisory OR b.project_id = $pid)
+RETURN a.id AS source, b.id AS target, type(r) AS kind, properties(r) AS props
+"""
+
 T = TypeVar("T")
 
 
@@ -106,7 +135,8 @@ def _edge(row: dict[str, Any]) -> GraphEdge:
 
 def _advisory_info(props: dict[str, Any], kind: str) -> AdvisoryInfo:
     return AdvisoryInfo(
-        id=props["id"], package=props.get("package", ""), title=props.get("title", ""), date=props.get("date", ""),
+        id=props["id"], package=props.get("package", ""), title=props.get("title", ""),
+        description=props.get("description") or "", date=props.get("date", ""),
         kind=kind, severity=props.get("severity"), cvss_score=props.get("cvss_score"), url=props.get("url"),
         aliases=props.get("aliases") or [], patched=props.get("patched") or [],
         functions=props.get("functions") or [],
@@ -350,9 +380,16 @@ class GraphRepository:
             CALL (c, a) {
               OPTIONAL MATCH (f:Function)-[call:CALLS]->(e:External)-[:FROM_CRATE]->(c)
               WITH f, call, e WHERE f IS NOT NULL
-              WITH f, call, e ORDER BY f.file, call.line
+              CALL (f, e) {
+                OPTIONAL MATCH (f)-[:HAS_CALL]->(s:Call)-[:TARGETS]->(e)
+                WITH s.line_start AS line WHERE line IS NOT NULL
+                WITH DISTINCT line ORDER BY line
+                RETURN collect(line) AS sites
+              }
+              WITH f, call, e, sites ORDER BY f.file, coalesce(sites[0], call.line)
               RETURN collect({function: f.id, qualified_name: f.qualified_name, file: f.file,
-                              line: coalesce(call.line, f.line_start), path: e.path,
+                              line: coalesce(sites[0], call.line, f.line_start), path: e.path,
+                              external: e.id, sites: sites, entry_distance: f.entry_distance,
                               affected: e.path IN coalesce(a.functions, [])
                                   OR any(alias IN coalesce(e.aliases, [])
                                          WHERE alias IN coalesce(a.functions, []))}) AS functions
@@ -384,6 +421,35 @@ class GraphRepository:
     async def _delete_orphan_advisories(self) -> None:
         await neo4j.run("MATCH (a:Advisory) WHERE NOT EXISTS { ()-[:AFFECTED_BY]->(a) } DETACH DELETE a")
 
+    async def dependency_view(self, project_id: str) -> DependencyView:
+        """Crates, their DEPENDS_ON edges, and the advisories that affect them."""
+        crates = await neo4j.run("MATCH (c:Crate {project_id: $pid}) RETURN c", pid=project_id)
+        depends = await neo4j.run(
+            "MATCH (a:Crate {project_id: $pid})-[r:DEPENDS_ON]->(b:Crate) "
+            "RETURN a.id AS source, b.id AS target, type(r) AS kind, properties(r) AS props",
+            pid=project_id,
+        )
+        affected = await neo4j.run(
+            "MATCH (c:Crate {project_id: $pid})-[r:AFFECTED_BY]->(a:Advisory) "
+            "RETURN c.id AS source, a.id AS target, type(r) AS kind, properties(r) AS props, a",
+            pid=project_id,
+        )
+        files = await neo4j.run(
+            "MATCH (c:Crate {project_id: $pid})-[:HAS_FILE]->(f:File) WITH c, f ORDER BY f.file "
+            "RETURN c.id AS crate, collect(f.file) AS files",
+            pid=project_id,
+        )
+        advisories: dict[str, GraphNode] = {}
+        for r in affected:
+            if r["target"] not in advisories:
+                props = {k: v for k, v in r["a"].items() if k != "description"}   # long markdown
+                advisories[r["target"]] = _node_from_props(props)
+        return DependencyView(
+            nodes=[*(_node_from_props(r["c"]) for r in crates), *advisories.values()],
+            edges=[_edge(r) for r in [*depends, *affected]],
+            crate_files={r["crate"]: r["files"] for r in files},
+        )
+
     async def get_graph(self, project_id: str, limit: int = 5000) -> CodeGraph:
         nodes = await neo4j.run(
             "MATCH (n:File|Symbol {project_id: $pid}) RETURN n LIMIT $limit", pid=project_id, limit=limit
@@ -412,7 +478,78 @@ class GraphRepository:
             findings=[Finding(**f) for f in row["findings"]],
         )
 
+    async def resolve_nodes(self, project_id: str,
+                            ids: Sequence[str]) -> dict[str, tuple[GraphNode, GraphNode | None]]:
+        """Nodes by id, each with its owner: the function (else class or file) that declares the
+        variable, makes the call, contains the unsafe span or holds the literal. Unknown ids are absent."""
+        out: dict[str, tuple[GraphNode, GraphNode | None]] = {}
+        for chunk in _chunks(list(dict.fromkeys(ids))):
+            for r in await neo4j.run(RESOLVE_NODES, ids=list(chunk), pid=project_id):
+                node = _node_from_props(r["n"])
+                out[node.id] = (node, _node_from_props(r["owner"]) if r["owner"] else None)
+        return out
+
+    async def edges_among(self, project_id: str, ids: Sequence[str]) -> list[GraphEdge]:
+        """Every stored edge whose two ends are both in `ids`."""
+        rows = await neo4j.run(EDGES_AMONG, ids=list(dict.fromkeys(ids)), pid=project_id)
+        return [_edge(r) for r in rows]
+
+    # -- source ---------------------------------------------------------------
+    async def source_language(self, project_id: str, path: str) -> str | None:
+        """The language of `path` if the project knows the file: a scanned source file, or a crate's
+        Cargo.lock or Cargo.toml. None for anything else, so the source endpoint serves only those."""
+        rows = await neo4j.run(
+            """
+            CALL () {
+              MATCH (f:File {project_id: $pid}) WHERE f.file = $path RETURN f.language AS language
+              UNION
+              MATCH (c:Crate {project_id: $pid}) WHERE c.file = $path OR c.manifest_path = $path
+              RETURN 'toml' AS language
+            }
+            RETURN language LIMIT 1
+            """,
+            pid=project_id, path=path,
+        )
+        return rows[0]["language"] if rows else None
+
+    async def source_flags(self, project_id: str, path: str, start: int, end: int) -> list[SourceFlag]:
+        """Findings and unsafe spans in `path` that overlap lines start..end."""
+        findings = await neo4j.run(
+            """
+            MATCH (f:Finding {project_id: $pid}) WHERE f.file = $path AND f.line IS NOT NULL
+              AND f.line <= $end AND coalesce(f.line_end, f.line) >= $start
+            RETURN f.id AS id, f.line AS line, coalesce(f.line_end, f.line) AS line_end, f.severity AS severity,
+                   f.rule AS rule, f.message AS message, f.node_id AS node_id
+            ORDER BY f.line
+            """,
+            pid=project_id, path=path, start=start, end=end,
+        )
+        spans = await neo4j.run(
+            """
+            MATCH (u:Unsafe {project_id: $pid}) WHERE u.file = $path AND u.line_start <= $end
+              AND u.line_end >= $start
+            RETURN u.id AS id, u.line_start AS line, u.line_end AS line_end, u.subkind AS subkind,
+                   coalesce(u.has_safety_comment, false) AS documented
+            ORDER BY u.line_start
+            """,
+            pid=project_id, path=path, start=start, end=end,
+        )
+        return [
+            *(SourceFlag(line=r["line"], line_end=r["line_end"], kind="finding", severity=r["severity"],
+                         rule=r["rule"], message=r["message"], finding_id=r["id"], node_id=r["node_id"])
+              for r in findings),
+            *(SourceFlag(line=r["line"], line_end=r["line_end"], kind="unsafe", node_id=r["id"],
+                         message=f"unsafe {r['subkind']}"
+                                 + ("" if r["documented"] else " without a SAFETY comment"))
+              for r in spans),
+        ]
+
     # -- findings -------------------------------------------------------------
+    async def get_finding(self, project_id: str, finding_id: str) -> Finding | None:
+        rows = await neo4j.run("MATCH (f:Finding {id: $id, project_id: $pid}) RETURN f", id=finding_id,
+                               pid=project_id)
+        return Finding(**rows[0]["f"]) if rows else None
+
     async def replace_findings(self, project_id: str, findings: list[Finding]) -> None:
         await neo4j.run("MATCH (f:Finding {project_id: $pid}) DETACH DELETE f", pid=project_id)
         rows = [f.model_dump(mode="json") for f in findings]

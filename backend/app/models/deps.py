@@ -117,6 +117,7 @@ class AdvisoryInfo(BaseModel):
     id: str
     package: str
     title: str = ""
+    description: str = ""                      # markdown, as RustSec writes it
     date: str = ""
     kind: str = "vulnerability"                # vulnerability | unmaintained | unsound | notice
     severity: str | None = None
@@ -142,9 +143,14 @@ class ReachingFunction(BaseModel):
     function: str                              # node id
     qualified_name: str
     file: str
-    line: int
+    line: int                                  # the first call site
     path: str                                  # the called external path
     affected: bool                             # the path is one of the advisory's affected functions
+    external: str = ""                         # node id of the called External
+    # Every call site's line, where the graph has per-site Call nodes (always with the extractor;
+    # without it only for calls the catalogue names). Empty otherwise: `line` is then the only one.
+    sites: list[int] = Field(default_factory=list)
+    entry_distance: int | None = None          # calls from the nearest entry point; None = unreachable
 
 
 class AffectedCrateRadius(BaseModel):

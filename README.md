@@ -10,9 +10,9 @@ repos/<project>  ──►  GraphBuilder  ──►  Neo4j  ──►  Analyzers
    source tree        (ast parsers)     code graph    (Cypher rules)    attached to nodes
         │                  ▲                │
         ▼                  │                ▼
-  codegraph-extract ───────┘       React UI: force-directed graph,
-  (rust-analyzer: resolved calls,  filters, findings → node inspector
-   types, data flow; RustSec)
+  codegraph-extract ───────┘       React UI: code and dependency graphs,
+  (rust-analyzer: resolved calls,  severity overlay, evidence paths step
+   types, data flow; RustSec)      by step, source panel, SARIF export
 ```
 
 ## How it fits together
@@ -27,7 +27,7 @@ repos/<project>  ──►  GraphBuilder  ──►  Neo4j  ──►  Analyzers
 | Repository | `backend/app/graph/repository.py` | The only module that speaks Cypher. Upserts graphs, reads them back, stores findings. |
 | Analyzers | `backend/app/analyzers/` | `Analyzer` subclasses; each `run()` is a Cypher query that yields `Finding`s. Registered with `@register`. |
 | API | `backend/app/api/` | FastAPI routers. Docs at `/docs`. |
-| Web | `frontend/src/` | Project sidebar with a folder picker for `repos/`, force-directed graph canvas (`react-force-graph-2d`), findings panel, node inspector. Data via TanStack Query. |
+| Web | `frontend/src/` | Project sidebar with a folder picker for `repos/`; two force-directed canvases (`react-force-graph-2d`), the code graph and the dependency graph, with findings drawn on them; findings, evidence-path, advisory and node panels; a source panel. Data via TanStack Query. See [The UI](#the-ui). |
 
 ### Graph model
 
@@ -140,6 +140,32 @@ curl -X POST localhost:8000/api/projects/<id>/analyze
 curl localhost:8000/api/projects/<id>/findings
 ```
 
+### The UI
+
+- **Code graph** draws files, types, functions and (with the **external** chip) the std, crate and
+  macro paths they call. Each node has a halo in the colour of its worst finding, functions with
+  several findings carry a count, and file names show how many findings the file holds; **colour by
+  severity** fills the nodes by severity instead of by kind.
+- **Findings** (right panel) can be filtered by severity, category and confidence, and the canvases
+  follow the same filters. They group by category, file, crate or rule. CWE ids link to MITRE.
+  **SARIF** downloads every finding as SARIF 2.1.0 with its evidence path as a code flow; open
+  it in VS Code's SARIF viewer with the scanned project as the workspace.
+- **Evidence path.** Clicking a finding lists the nodes that justify it, in order: source to sink
+  for a taint flow (every variable, call and argument position on the way), entry point to site
+  for an unsafe or panic finding, crate to advisory for a dependency finding. The path is drawn
+  on the canvas and everything else is dimmed. Arrow keys step through it, and each step opens its
+  line in the source panel, where every step in the same file is numbered in the gutter.
+- **Dependencies** draws the crates of every `Cargo.lock` (workspace members as rings), their
+  dependency edges and the advisories that affect them; on a large lockfile it starts with only
+  the crates on a path to an advisory. The **Advisories** tab lists the advisories. Picking one
+  shows its blast radius (rule D4): the dependency paths from each member, every function that
+  calls into the affected crate with the line of each call (affected functions flagged), and the
+  importing files. **code graph** shows those functions and calls in the code graph. From the
+  project, an advisory's calling line is three clicks away: **Dependencies**, the advisory, the line.
+- **Source panel** shows the file around a line with findings (dots in the gutter, which open the
+  finding), unsafe spans (orange bar) and SAFETY comments (green) marked. It serves only files the
+  project's graph knows, plus its `Cargo.toml` and `Cargo.lock` files. Escape closes it.
+
 ### Running without Docker
 
 ```bash
@@ -152,7 +178,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env          # REPOS_ROOT defaults to ../repos
 uvicorn app.main:app --reload
-pytest                        # unit tests need no database; the ground-truth harness needs Docker
+pytest                        # unit tests need no database; the harness and endpoint tests need Docker
 
 # Web
 cd frontend
@@ -199,8 +225,12 @@ unchanged project skips rust-analyzer.
 | `GET` | `/api/projects/{id}/node?id=` | One node with incoming/outgoing edges (with props) and findings |
 | `POST` | `/api/projects/{id}/analyze` | Run the analyzers that apply to the project's languages; counts by severity, rule and category (`409` while scanning) |
 | `GET` | `/api/projects/{id}/findings?severity=&rule=&category=` | Findings, worst first |
+| `GET` | `/api/projects/{id}/findings/{finding_id}/evidence` | The finding's evidence as a path: each step's node, the function or file holding it, and the stored edge to the next step |
+| `GET` | `/api/projects/{id}/findings.sarif?category=` | Findings as a SARIF 2.1.0 log (download), evidence paths as code flows |
+| `GET` | `/api/projects/{id}/source?path=&start=&end=` | Lines of a project file (at most 5 000 per request) with the findings, unsafe spans and SAFETY comments on them |
+| `GET` | `/api/projects/{id}/dependencies` | Crates, `DEPENDS_ON` edges, the advisories affecting them, and each workspace member's files |
 | `GET` | `/api/projects/{id}/advisories` | RustSec advisories affecting the project, with the crate versions they hit |
-| `GET` | `/api/projects/{id}/advisories/{advisory_id}/blast-radius` | Affected crates, dependency paths from each workspace member, calling functions (flagging affected ones) and importing files |
+| `GET` | `/api/projects/{id}/advisories/{advisory_id}/blast-radius` | Affected crates, dependency paths from each workspace member, calling functions with every call site's line and their distance from an entry point (flagging affected ones), and importing files |
 | `GET` | `/api/rules` | Rules with category, CWE ids, languages and version, plus the catalogue version and digest |
 | `GET` | `/api/health` | Pings Neo4j |
 
@@ -454,14 +484,25 @@ into the project's own crate.
 - The tree-sitter walk recurses over the syntax tree, and a very deeply nested expression (a
   method chain of a few hundred calls) overflows Python's stack; such a file is skipped and named
   in the scan warnings.
-- The graph endpoint returns everything up to `limit`, and only files and symbols: the UI does not
-  show `Var` and `Call` nodes or evidence paths yet (phase 4). For big projects, add neighborhood
-  queries (`node?id=&depth=`) and let the UI expand on click.
+- The canvases draw files and symbols only. A variable or call site on an evidence path is shown
+  on the function that holds it (the path panel and the source panel name the exact node and line),
+  so a taint path inside one function is a single highlighted node. The graph endpoint returns
+  everything up to `limit` (5 000 nodes); a project larger than that is cut off, and the canvas
+  gets slow well before it. Neighbourhood queries (`node?id=&depth=`) with expand-on-click would be
+  the next step.
+- Evidence holds node ids. After a rescan the old findings are cleared, but until the analysis runs
+  again a finding opened from an old SARIF file or a bookmark may point at nodes that are gone; the
+  path panel says how many.
+- SARIF locations are relative to `%SRCROOT%`, the scanned project's root, which the log describes
+  but does not resolve (the API sees the project under its container path). Open the file with the
+  project as the VS Code workspace. `partialFingerprints` (rule, node and sink, without line
+  numbers) stay the same across analysis runs and line shifts.
 
 ## Roadmap
 
 The five vulnerability classes (unsafe code, panics, taint-based injection, vulnerable
-dependencies, crypto and secrets) and the rust-analyzer extractor are in place. Next are the
-visualization of evidence paths and dependencies (phase 4) and the evaluation on the RustXec
-benchmark against cargo-audit, clippy, Semgrep and CodeQL (phase 5). The phased plan, schema v2
+dependencies, crypto and secrets), the rust-analyzer extractor and the visualization of evidence
+paths, dependencies and source (phase 4) are in place. Next is the evaluation on the RustXec
+benchmark against cargo-audit, clippy, Semgrep and CodeQL (phase 5), which reads codegraph's
+results from the SARIF export. The phased plan, schema v2
 and evaluation design are in [`docs/build-plan.md`](docs/build-plan.md).

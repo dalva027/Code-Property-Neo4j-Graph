@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.deps import RepoDep
 from app.models.deps import BlastRadius, ProjectAdvisory
+from app.models.views import DependencyView
 from app.services.ingest import require_ready
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["dependencies"])
@@ -12,6 +13,14 @@ async def _ready_project(project_id: str, repo: RepoDep) -> None:
     if project is None:
         raise HTTPException(404, "project not found")
     require_ready(project)
+
+
+@router.get("/dependencies", response_model=DependencyView)
+async def dependency_graph(project_id: str, repo: RepoDep):
+    """Crates of every Cargo.lock in the project with their dependency edges, the advisories that
+    affect them, and the files of each workspace member."""
+    await _ready_project(project_id, repo)
+    return await repo.dependency_view(project_id)
 
 
 @router.get("/advisories", response_model=list[ProjectAdvisory])

@@ -1,6 +1,6 @@
 [project]
 name = "codegraph-api"
-version = "0.1.0"
+version = "0.4.0"
 description = "Code review / static analysis API backed by a Neo4j code graph"
 requires-python = ">=3.11"
 dependencies = [

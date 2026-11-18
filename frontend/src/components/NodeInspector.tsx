@@ -2,15 +2,22 @@ import type { CSSProperties } from "react";
 import { useNode } from "../hooks/useApi";
 import { KIND_COLOR, SEVERITY_COLOR, shortId } from "../theme";
 import type { EdgeKind, GraphEdge, GraphNode } from "../types";
+import { CweLinks } from "./FindingsPanel";
 
 interface Props {
   projectId: string;
   nodeId: string;
   onClose: () => void;
   onSelectNode: (id: string) => void;
+  onOpenFinding: (id: string) => void;
+  onOpenSource: (path: string, line: number, lineEnd?: number) => void;
+  onOpenAdvisory: (id: string) => void;
+  onMode: (mode: "code" | "deps") => void;
 }
 
-export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Props) {
+export function NodeInspector({
+  projectId, nodeId, onClose, onSelectNode, onOpenFinding, onOpenSource, onOpenAdvisory, onMode,
+}: Props) {
   const { data, isLoading, error } = useNode(projectId, nodeId);
 
   if (isLoading) return <div className="panel muted">Loading node…</div>;
@@ -18,24 +25,39 @@ export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Prop
     return (
       <div className="panel">
         <p className="error">{error?.message ?? "Node not found. It may have been removed by a rescan."}</p>
-        <button className="ghost" onClick={onClose}>Back to findings</button>
+        <button className="ghost" onClick={onClose}>Back</button>
       </div>
     );
   }
 
   const { node, incoming, outgoing, findings } = data;
+  const hasSource = node.file !== "" && node.line_start > 0 && node.kind !== "advisory";
   return (
     <div className="panel">
       <header className="panel-header">
         <span className="kind-badge" style={{ "--chip": KIND_COLOR[node.kind] } as CSSProperties}>
           {node.subkind ?? node.kind}
         </span>
-        <button className="ghost" onClick={onClose}>Back to findings</button>
+        <button className="ghost" onClick={onClose}>Back</button>
       </header>
 
       <h2 className="mono">{node.name}</h2>
       <p className="muted mono small">{node.qualified_name}</p>
       <NodeLocation node={node} />
+      <div className="node-actions">
+        {hasSource && (
+          <button className="ghost-button" onClick={() => onOpenSource(node.file, node.line_start,
+            node.kind === "file" ? undefined : node.line_end)}>
+            View source
+          </button>
+        )}
+        {node.kind === "advisory" && (
+          <button className="ghost-button" onClick={() => onOpenAdvisory(node.id)}>Blast radius</button>
+        )}
+        {(node.kind === "crate" || node.kind === "advisory") && (
+          <button className="ghost-button" onClick={() => onMode("deps")}>Show in dependency graph</button>
+        )}
+      </div>
 
       {node.kind === "advisory" && typeof node.attrs?.title === "string" && (
         <p>
@@ -80,10 +102,8 @@ export function NodeInspector({ projectId, nodeId, onClose, onSelectNode }: Prop
                 <span className="severity-dot" style={{ background: SEVERITY_COLOR[f.severity] }} />
                 <span>
                   <span className="finding-rule">{f.rule}</span>
-                  {f.cwe.map((c) => (
-                    <span key={c} className="tag">{c}</span>
-                  ))}{" "}
-                  {f.message}
+                  <CweLinks cwe={f.cwe} />{" "}
+                  <button className="link finding-open-inline" onClick={() => onOpenFinding(f.id)}>{f.message}</button>
                 </span>
               </li>
             ))}

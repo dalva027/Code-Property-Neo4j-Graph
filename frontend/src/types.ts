@@ -109,3 +109,98 @@ export interface NodeDetail {
   outgoing: GraphEdge[];
   findings: Finding[];
 }
+
+// -- phase 4 views: evidence paths, source slices, the dependency graph ----------------------------
+
+export interface EvidenceStep {
+  node: GraphNode;
+  owner: GraphNode | null;     // the function (or file) holding a var, call site, unsafe span or literal
+  edge: GraphEdge | null;      // the stored edge to the next step, in either direction; null = no hop
+}
+
+export interface Evidence {
+  finding: Finding;
+  steps: EvidenceStep[];
+  missing: string[];           // evidence ids no longer in the graph (rescanned after the analysis)
+}
+
+export type SourceFlagKind = "finding" | "unsafe" | "safety";
+
+export interface SourceFlag {
+  line: number;
+  line_end: number;
+  kind: SourceFlagKind;
+  severity?: Severity | null;
+  rule?: string | null;
+  message?: string | null;
+  finding_id?: string | null;
+  node_id?: string | null;
+}
+
+export interface SourceSlice {
+  path: string;
+  language: string;
+  start: number;
+  end: number;
+  total_lines: number;
+  lines: string[];
+  flags: SourceFlag[];
+}
+
+export interface DependencyView {
+  nodes: GraphNode[];                       // crates and the advisories affecting them
+  edges: GraphEdge[];                       // DEPENDS_ON, AFFECTED_BY
+  crate_files: Record<string, string[]>;    // workspace member crate id -> its files
+}
+
+export interface AdvisoryInfo {
+  id: string;
+  package: string;
+  title: string;
+  description: string;
+  date: string;
+  kind: string;                             // vulnerability | unmaintained | unsound | notice
+  severity?: string | null;
+  cvss_score?: number | null;
+  url?: string | null;
+  aliases: string[];
+  patched: string[];
+  functions: string[];
+}
+
+export interface CrateRef {
+  id: string;
+  name: string;
+  version: string;
+}
+
+export interface ProjectAdvisory {
+  advisory: AdvisoryInfo;
+  crates: CrateRef[];
+}
+
+export interface ReachingFunction {
+  function: string;
+  qualified_name: string;
+  file: string;
+  line: number;
+  path: string;                 // the called external path
+  affected: boolean;            // one of the advisory's affected functions
+  external: string;             // node id of the External
+  sites: number[];              // every call site's line, when the graph has per-site Call nodes
+  entry_distance: number | null;
+}
+
+export interface AffectedCrateRadius {
+  crate: CrateRef;
+  kind: string;
+  paths: CrateRef[][];          // member first
+  functions: ReachingFunction[];
+  importing_files: string[];
+}
+
+export interface BlastRadius {
+  project_id: string;
+  advisory: AdvisoryInfo;
+  crates: AffectedCrateRadius[];
+}

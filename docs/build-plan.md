@@ -4,7 +4,7 @@ Topic: **Graph Databases and Software Vulnerabilities Detection and Visualizatio
 Target language: **Rust** (analyzed code and the new extractor). Orchestration, rules and UI stay on
 the existing FastAPI + Neo4j + React stack.
 
-Status: draft, 2026-10-24; benchmark dataset added 2026-11-02; RustXec conditions of use (§7.8) added 2026-11-11. Phases 0, 1 and 2 done 2026-11-04; Phase 3 done 2026-11-11; Phases 4 and 5 next.
+Status: draft, 2026-10-24; benchmark dataset added 2026-11-02; RustXec conditions of use (§7.8) added 2026-11-11. Phases 0, 1 and 2 done 2026-11-04; Phase 3 done 2026-11-11; Phase 4 done 2026-11-17; Phase 5 next.
 
 ---
 
@@ -541,6 +541,63 @@ Gaps and things to know before Phase 5:
 
 Acceptance: a user can go from an advisory to the exact line that calls the affected function in
 three clicks, and from a taint finding to every hop of the flow.
+
+**Done (2026-11-17).** All five items shipped. Acceptance, as checked by hand in a browser (headless
+Chrome driven over the DevTools protocol, with screenshots) on `vuln-samples/{taint,unsafe,deps}`:
+- Advisory to line: from the project, **Dependencies**, the advisory (on the graph or in the
+  Advisories tab), then a call line in its blast radius; the third click opens the source panel at
+  `src/main.rs:8`, the `SmallVec::insert_many` call of RUSTSEC-2021-0003, with the finding marked.
+- Taint finding to every hop: clicking the T1 finding on the CLI sample lists the seven nodes of
+  its stored path (`std::env::args`, `nth`, `unwrap_or_default`, the helper's return value, the
+  call to the helper, the local `tool`, `Command::new`), each with its line and the edge to the
+  next with its argument position. Arrow keys step through it, the canvas centres on each step's
+  function, and the source panel follows with every step numbered in the gutter.
+- SARIF exports of the three samples validate against the OASIS SARIF 2.1.0 schema with no errors.
+
+Choices made while building:
+- **Four endpoints.** `findings/{id}/evidence` resolves a finding's evidence ids to nodes, gives
+  each the function (or file) that holds it, and picks the stored edge between each step and the
+  next (the most specific kind, in either direction; none where the evidence lists sites side by
+  side). `source?path&start&end` serves at most 5 000 lines of a file the graph knows (or a
+  `Cargo.toml`/`Cargo.lock` of the project), refuses absolute paths, `..` and symlinks that resolve
+  outside the project, and returns the findings, unsafe spans and SAFETY-comment lines on them.
+  `findings.sarif` and `dependencies` as planned. The blast radius gained every call site's line
+  (from the `Call` nodes), the External's id, the caller's distance from an entry point, and the
+  advisory text.
+- **The canvases draw files and symbols, not `Var` and `Call` nodes.** A step on a variable or a
+  call site is drawn on the function that holds it, so a taint path inside one function is one lit
+  node; the path panel and the source panel name the exact node and line. Drawing every variable
+  would multiply the canvas many times over on real crates (tar has 10 000 flow edges) for
+  detail the path panel shows better.
+- **Overlay.** A node's halo is its worst finding, and a file collects everything inside it; a
+  finding on a node the canvas does not draw lands on the innermost symbol around its line. The
+  severity, category and confidence filters are shared by the findings list and both canvases.
+  Findings group by category, file, crate (from the members' files) or rule.
+- **Dependency view.** Crates laid out left to right by dependency depth; workspace members as
+  rings, advisories as diamonds coloured by CVSS severity or informational kind. Above 80 crates it
+  starts with only the crates on a path to an advisory. A finding whose path has no code in it
+  (`vulnerable-dependency`) opens on this view; the blast radius can be shown on either view.
+- **SARIF.** One run; every registered rule in the driver with its category, CodeQL-style
+  `external/cwe/cwe-NNN` tags and, for security rules, `security-severity`; locations relative to
+  `%SRCROOT%`; the evidence steps that have a location become a code flow; `partialFingerprints`
+  hash the rule, the node and the sink without line numbers, so they hold across analysis runs and
+  line shifts (the property Phase 5's fix-awareness needs). This export is codegraph's side of the
+  RQ2 comparison.
+- The layout stays put when filters or the highlight change: node objects are reused and the
+  simulation restarts only when the set of nodes or edges changes.
+- Source highlighting is a small tokenizer for Rust, Python and TOML in the frontend, not a library.
+- API version 0.4.0. `tests/test_views.py` covers the four endpoints against Neo4j (9 tests; the
+  Neo4j fixtures moved to `tests/conftest.py`). The suite is 115 tests plus 4 skipped without the
+  extractor and 119 with it.
+
+Gaps:
+- The canvases are bounded by the graph endpoint's 5 000 nodes and get slow before that; the
+  neighbourhood queries with expand-on-click that README's limits name are not done.
+- No deep links: the selected project, finding and step are not in the URL, so a walkthrough
+  (RQ4) or a bug report cannot point at a view.
+- The frontend has no automated tests; the views were checked by hand with screenshots.
+- SARIF's `%SRCROOT%` is described but not resolved to a path; the file opens when the project is
+  the VS Code workspace.
 
 ### Phase 5: evaluation and write-up (~3 weeks plus writing)
 
